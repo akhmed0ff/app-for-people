@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@taxi/backend/*": ["backend/src/*"],
+      "@taxi/admin/*": ["admin/src/*"],
+      "@taxi/customer/*": ["customer/src/*"],
+      "@taxi/driver/*": ["driver/src/*"]
+    }
+  }
+}

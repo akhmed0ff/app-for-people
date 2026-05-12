@@ -1,0 +1,26 @@
+{
+  "name": "taxi-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Fullstack taxi platform monorepo.",
+  "packageManager": "npm@10.8.2",
+  "workspaces": [
+    "backend",
+    "admin",
+    "customer",
+    "driver"
+  ],
+  "scripts": {
+    "dev": "docker compose up --build",
+    "dev:infra": "docker compose up postgres redis -d",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "format": "prettier --write .",
+    "db:migrate": "npm --workspace backend run prisma:migrate",
+    "db:seed": "npm --workspace backend run prisma:seed"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3"
+  }
+}

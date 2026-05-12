@@ -1,0 +1,16 @@
+node_modules
+dist
+build
+.next
+.expo
+.turbo
+coverage
+*.log
+.env
+.env.*
+!.env.example
+!.env.production.example
+!.env.staging.example
+.DS_Store
+postgres-data
+redis-data

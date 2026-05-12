@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --surface: 255 255 255;
+  --muted: 102 112 133;
+  --line: 217 222 231;
+  --text: 23 32 42;
+  --brand: 15 118 110;
+}
+
+.dark {
+  --surface: 18 24 33;
+  --muted: 151 161 176;
+  --line: 49 57 70;
+  --text: 242 244 247;
+  --brand: 45 212 191;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background: #f7f8fa;
+  color: rgb(var(--text));
+}
+
+.dark body {
+  background: #0f141b;
+}

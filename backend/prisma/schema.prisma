@@ -1,0 +1,252 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  DRIVER
+  PASSENGER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum DriverStatus {
+  OFFLINE
+  ONLINE
+  BUSY
+  SUSPENDED
+}
+
+enum OrderStatus {
+  SEARCHING
+  DRIVER_ASSIGNED
+  DRIVER_ARRIVED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum TransactionType {
+  PAYMENT
+  DRIVER_PAYOUT
+  REFUND
+  BONUS
+  COMMISSION
+}
+
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  phone         String?        @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          Role
+  status        UserStatus     @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  driver        Driver?
+  passenger     Passenger?
+  refreshTokens RefreshToken[]
+  transactions  Transaction[]
+
+  @@index([role, status])
+  @@index([firstName, lastName])
+  @@index([createdAt])
+}
+
+model Driver {
+  id            String           @id @default(uuid())
+  userId        String           @unique
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  licenseNumber String           @unique
+  vehicleMake   String
+  vehicleModel  String
+  vehicleColor  String?
+  vehiclePlate  String           @unique
+  status        DriverStatus     @default(OFFLINE)
+  rating        Decimal          @default(5.0) @db.Decimal(2, 1)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  balance       DriverBalance?
+  locations     DriverLocation[]
+  orders        Order[]
+  transactions  Transaction[]
+
+  @@index([status])
+  @@index([vehiclePlate])
+}
+
+model Passenger {
+  id           String        @id @default(uuid())
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating       Decimal       @default(5.0) @db.Decimal(2, 1)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  orders       Order[]
+  transactions Transaction[]
+}
+
+model Tariff {
+  id                    String   @id @default(uuid())
+  code                  String   @unique
+  name                  String
+  description           String?
+  carSupplyPrice        Int
+  pricePerKm            Int
+  freeWaitingMinutes    Int
+  waitingPricePerMinute Int
+  stopPrice             Int      @default(0)
+  minimumOrderPrice     Int
+  currency              String   @default("UZS")
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  orders                Order[]
+
+  @@index([isActive, code])
+  @@index([name])
+}
+
+model Order {
+  id              String          @id @default(uuid())
+  passengerId     String
+  passenger       Passenger       @relation(fields: [passengerId], references: [id])
+  driverId        String?
+  driver          Driver?         @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  tariffId        String?
+  tariff          Tariff?         @relation(fields: [tariffId], references: [id], onDelete: SetNull)
+  status          OrderStatus     @default(SEARCHING)
+  pickupAddress   String
+  pickupLat       Decimal         @db.Decimal(10, 7)
+  pickupLng       Decimal         @db.Decimal(10, 7)
+  dropoffAddress  String
+  dropoffLat      Decimal         @db.Decimal(10, 7)
+  dropoffLng      Decimal         @db.Decimal(10, 7)
+  distanceMeters  Int?
+  durationSeconds Int?
+  fareCents       Int?
+  currency        String          @default("UZS")
+  paymentMethod   PaymentMethod   @default(CASH)
+  requestedAt     DateTime        @default(now())
+  assignedAt      DateTime?
+  arrivedAt       DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  canceledAt      DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  transactions    Transaction[]
+  history         OrderHistory[]
+
+  @@index([status, requestedAt])
+  @@index([passengerId, createdAt])
+  @@index([driverId, createdAt])
+  @@index([pickupLat, pickupLng])
+  @@index([dropoffLat, dropoffLng])
+}
+
+model Transaction {
+  id          String            @id @default(uuid())
+  orderId     String?
+  order       Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  userId      String?
+  user        User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  driverId    String?
+  driver      Driver?           @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  passengerId String?
+  passenger   Passenger?        @relation(fields: [passengerId], references: [id], onDelete: SetNull)
+  type        TransactionType
+  status      TransactionStatus @default(PENDING)
+  amountCents Int
+  currency    String            @default("UZS")
+  provider    String?
+  providerRef String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([orderId])
+  @@index([userId, createdAt])
+  @@index([driverId, createdAt])
+  @@index([passengerId, createdAt])
+  @@index([status, createdAt])
+  @@index([providerRef])
+}
+
+model DriverBalance {
+  id                 String   @id @default(uuid())
+  driverId           String   @unique
+  driver             Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  availableCents     Int      @default(0)
+  pendingCents       Int      @default(0)
+  lifetimeEarnedCents Int     @default(0)
+  currency           String   @default("UZS")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([availableCents])
+}
+
+model DriverLocation {
+  id        String   @id @default(uuid())
+  driverId  String
+  driver    Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  latitude  Decimal  @db.Decimal(10, 7)
+  longitude Decimal  @db.Decimal(10, 7)
+  heading   Decimal? @db.Decimal(6, 2)
+  speed     Decimal? @db.Decimal(6, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([driverId, createdAt])
+  @@index([latitude, longitude])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId, expiresAt])
+  @@index([tokenHash])
+}
+
+model OrderHistory {
+  id        String      @id @default(uuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  comment   String?
+  metadata  Json?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([orderId, createdAt])
+  @@index([status, createdAt])
+}

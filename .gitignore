@@ -1,0 +1,17 @@
+node_modules
+.pnp
+.pnp.js
+.next
+.expo
+dist
+build
+coverage
+.turbo
+*.tsbuildinfo
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+postgres-data
+redis-data

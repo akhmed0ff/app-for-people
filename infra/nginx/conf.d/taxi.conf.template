@@ -1,0 +1,99 @@
+upstream backend_upstream {
+  server backend:3000;
+  keepalive 64;
+}
+
+upstream admin_upstream {
+  server admin:3001;
+  keepalive 32;
+}
+
+server {
+  listen 80;
+  server_name ${APP_DOMAIN} ${API_DOMAIN};
+
+  location /.well-known/acme-challenge/ {
+    root /var/www/certbot;
+  }
+
+  location / {
+    return 301 https://$host$request_uri;
+  }
+}
+
+server {
+  listen 443 ssl http2;
+  server_name ${API_DOMAIN};
+
+  ssl_certificate /etc/letsencrypt/live/${API_DOMAIN}/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/${API_DOMAIN}/privkey.pem;
+  ssl_session_timeout 1d;
+  ssl_session_cache shared:SSL:10m;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers off;
+
+  include /etc/nginx/snippets/security-headers.conf;
+
+  location /api/v1/auth/ {
+    limit_req zone=auth_per_ip burst=10 nodelay;
+    proxy_pass http://backend_upstream;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  location /api/ {
+    limit_req zone=api_per_ip burst=40 nodelay;
+    proxy_pass http://backend_upstream;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  location /taxi/ {
+    proxy_pass http://backend_upstream;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 75s;
+  }
+
+  location /docs {
+    allow ${ADMIN_CIDR};
+    deny all;
+    proxy_pass http://backend_upstream;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+
+server {
+  listen 443 ssl http2;
+  server_name ${APP_DOMAIN};
+
+  ssl_certificate /etc/letsencrypt/live/${APP_DOMAIN}/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/${APP_DOMAIN}/privkey.pem;
+  ssl_session_timeout 1d;
+  ssl_session_cache shared:SSL:10m;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers off;
+
+  include /etc/nginx/snippets/security-headers.conf;
+
+  location / {
+    proxy_pass http://admin_upstream;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
