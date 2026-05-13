@@ -6,10 +6,17 @@ import { useConnectionStore } from '../store/connection.store';
 export type ServerToClientEvents = {
   connected: (payload: { socketId: string; heartbeatIntervalMs: number }) => void;
   'driver.location.updated': (payload: DriverLocation) => void;
+  'order:matching_started': (payload: { orderId: string; status: OrderStatus }) => void;
+  'order:no_drivers_available': (payload: { orderId: string; message: string }) => void;
   'order.offered': (payload: unknown) => void;
   'order.accepted': (payload: Order) => void;
+  'order:accepted': (payload: Order) => void;
   'order.canceled': (payload: Order) => void;
+  'order:canceled': (payload: Order) => void;
   'order.status.updated': (payload: Order) => void;
+  'order:driver_arrived': (payload: Order) => void;
+  'order:started': (payload: Order) => void;
+  'order:completed': (payload: Order) => void;
   'eta.updated': (payload: { orderId: string; distanceMeters: number; etaSeconds: number }) => void;
   'heartbeat.ack': (payload: { ok: boolean; serverTime: string }) => void;
   error: (payload: { message: string }) => void;

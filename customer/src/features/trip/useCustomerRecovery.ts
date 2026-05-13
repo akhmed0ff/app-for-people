@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { fetchActiveOrder } from '../../shared/api/customer-api';
+import { Order } from '../../shared/api/types';
+import { fetchCurrentUser } from '../../shared/api/customer-api';
 import { getTaxiSocket } from '../../shared/socket/taxi-socket';
 import { useAuthStore } from '../../shared/store/auth.store';
 import { useBookingStore } from '../../shared/store/booking.store';
@@ -13,7 +14,8 @@ export function useCustomerRecovery() {
   const authHydrated = useAuthStore((state) => state.hydrated);
   const activeOrder = useBookingStore((state) => state.activeOrder);
   const hydrateActiveOrder = useBookingStore((state) => state.hydrateActiveOrder);
-  const setActiveOrder = useBookingStore((state) => state.setActiveOrder);
+  const recoverActiveTrip = useBookingStore((state) => state.recoverActiveTrip);
+  const syncActiveOrder = useBookingStore((state) => state.syncActiveOrder);
   const connectionStatus = useConnectionStore((state) => state.status);
   const [recovering, setRecovering] = useState(false);
   const lastEventKey = useRef<string | null>(null);
@@ -29,20 +31,18 @@ export function useCustomerRecovery() {
 
     const accessToken = token;
     let cancelled = false;
-    async function syncActiveOrder() {
+    async function recover() {
       setRecovering(true);
       try {
-        const order = await fetchActiveOrder();
+        await fetchCurrentUser().catch(() => null);
+        const order = await recoverActiveTrip();
         if (cancelled) {
           return;
         }
-        setActiveOrder(order);
         if (order) {
           getTaxiSocket(accessToken).emit('order.join', { orderId: order.id });
           router.replace(`/trip/${order.id}`);
         }
-      } catch {
-        // The connection banner reflects the network state; keep stale local order visible.
       } finally {
         if (!cancelled) {
           setRecovering(false);
@@ -50,11 +50,11 @@ export function useCustomerRecovery() {
       }
     }
 
-    void syncActiveOrder();
+    void recover();
     return () => {
       cancelled = true;
     };
-  }, [authHydrated, setActiveOrder, token]);
+  }, [authHydrated, recoverActiveTrip, token]);
 
   useEffect(() => {
     if (!token) {
@@ -62,18 +62,19 @@ export function useCustomerRecovery() {
     }
 
     const socket = getTaxiSocket(token);
-    function handleOrder(order: NonNullable<typeof activeOrder>) {
+    function handleOrder(order: Order) {
+      const current = useBookingStore.getState().activeOrder;
+      if (current && current.id !== order.id) {
+        return;
+      }
       const key = `${order.id}:${order.status}:${order.updatedAt ?? ''}`;
       if (lastEventKey.current === key) {
         return;
       }
       lastEventKey.current = key;
-      setActiveOrder(order);
+      useBookingStore.getState().setActiveOrder(order);
     }
 
-    socket.on('order.accepted', handleOrder);
-    socket.on('order.status.updated', handleOrder);
-    socket.on('order.canceled', handleOrder);
     function joinActiveOrder() {
       const order = useBookingStore.getState().activeOrder;
       if (order) {
@@ -81,6 +82,11 @@ export function useCustomerRecovery() {
       }
     }
 
+    socket.on('order.accepted', handleOrder);
+    socket.on('order:accepted', handleOrder);
+    socket.on('order.status.updated', handleOrder);
+    socket.on('order.canceled', handleOrder);
+    socket.on('order:canceled', handleOrder);
     socket.on('connect', joinActiveOrder);
     if (socket.connected) {
       joinActiveOrder();
@@ -88,27 +94,25 @@ export function useCustomerRecovery() {
 
     return () => {
       socket.off('order.accepted', handleOrder);
+      socket.off('order:accepted', handleOrder);
       socket.off('order.status.updated', handleOrder);
       socket.off('order.canceled', handleOrder);
+      socket.off('order:canceled', handleOrder);
       socket.off('connect', joinActiveOrder);
     };
-  }, [setActiveOrder, token]);
+  }, [token]);
 
   useEffect(() => {
     if (!token || !activeOrder || connectionStatus === 'connected') {
       return;
     }
 
-    const timer = setInterval(async () => {
-      try {
-        setActiveOrder(await fetchActiveOrder());
-      } catch {
-        // Keep polling until the network/backend is available again.
-      }
+    const timer = setInterval(() => {
+      void syncActiveOrder();
     }, POLLING_MS);
 
     return () => clearInterval(timer);
-  }, [activeOrder, connectionStatus, setActiveOrder, token]);
+  }, [activeOrder, connectionStatus, syncActiveOrder, token]);
 
   return { recovering };
 }

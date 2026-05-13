@@ -16,6 +16,15 @@ export type Point = {
   longitude: number;
 };
 
+export type AddressSuggestion = {
+  id: string;
+  name: string;
+  fullAddress: string;
+  lat: number;
+  lng: number;
+  placeType: string;
+};
+
 export type Tariff = {
   id: string;
   code: string;
@@ -30,19 +39,31 @@ export type Tariff = {
   currency: string;
 };
 
-export type PriceEstimate = {
-  tariffCode: string;
-  currency: string;
-  distanceKm: number;
-  billableWaitingMinutes: number;
-  stopsCount: number;
-  carSupplyPrice: number;
+export type PricingBreakdown = {
+  baseFare: number;
   distancePrice: number;
   waitingPrice: number;
-  stopsPrice: number;
-  subtotal: number;
-  minimumOrderPrice: number;
-  total: number;
+  stopPrice: number;
+  minimumFare: number;
+  totalPrice: number;
+};
+
+export type RouteGeometry = string | null;
+
+export type RouteEstimate = {
+  distanceKm: number;
+  durationMinutes: number;
+  geometry: RouteGeometry;
+  tariffCode: string;
+  estimatedPrice: number;
+  pricingBreakdown: PricingBreakdown;
+};
+
+export type TariffEstimate = {
+  tariff: Tariff;
+  estimate: RouteEstimate | null;
+  isLoading: boolean;
+  error: string | null;
 };
 
 export type OrderStatus =
@@ -53,6 +74,30 @@ export type OrderStatus =
   | 'COMPLETED'
   | 'CANCELED';
 
+export type PassengerTripState =
+  | 'IDLE'
+  | 'SEARCHING_DRIVER'
+  | 'NO_DRIVERS_AVAILABLE'
+  | 'DRIVER_ASSIGNED'
+  | 'DRIVER_ARRIVED'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'CANCELED'
+  | 'ERROR';
+
+export type AssignedDriver = {
+  id: string;
+  user?: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  };
+  vehicleMake?: string;
+  vehicleModel?: string;
+  vehicleColor?: string;
+  vehiclePlate?: string;
+};
+
 export type Order = {
   id: string;
   status: OrderStatus;
@@ -62,9 +107,14 @@ export type Order = {
   dropoffAddress: string;
   dropoffLat: string | number;
   dropoffLng: string | number;
+  distanceMeters?: number;
+  durationSeconds?: number;
+  routeDurationMinutes?: number | null;
+  routeGeometry?: RouteGeometry;
   fareCents?: number;
   currency: string;
   driverId?: string;
+  driver?: AssignedDriver | null;
   tariffId?: string;
   createdAt: string;
   updatedAt?: string;

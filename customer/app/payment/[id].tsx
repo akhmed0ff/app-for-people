@@ -24,7 +24,7 @@ export default function PaymentScreen() {
         <Text style={styles.value}>{id}</Text>
         <Text style={styles.label}>К оплате</Text>
         <Text style={styles.total}>
-          {estimate ? formatMoney(estimate.total, estimate.currency) : 'После завершения поездки'}
+          {estimate ? formatMoney(estimate.estimatedPrice) : 'После завершения поездки'}
         </Text>
         <Button label="Оплатить наличными" onPress={pay} />
       </Section>

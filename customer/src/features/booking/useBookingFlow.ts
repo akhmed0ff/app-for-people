@@ -1,19 +1,14 @@
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
 import {
-  createOrder,
-  estimatePrice,
+  estimateRoute,
   fetchPassengerProfile,
   fetchTariffs,
 } from '../../shared/api/customer-api';
 import { Tariff } from '../../shared/api/types';
-import { useAuthStore } from '../../shared/store/auth.store';
 import { useBookingStore } from '../../shared/store/booking.store';
-import { getTaxiSocket } from '../../shared/socket/taxi-socket';
-import { estimateDistanceMeters } from '../../shared/utils/pricing';
 
 export function useBookingFlow() {
-  const auth = useAuthStore();
   const booking = useBookingStore();
 
   async function loadTariffs() {
@@ -28,12 +23,12 @@ export function useBookingFlow() {
     if (!booking.pickup || !booking.dropoff) {
       return null;
     }
-    const distanceMeters = estimateDistanceMeters(booking.pickup, booking.dropoff);
-    const estimate = await estimatePrice({
+    const estimate = await estimateRoute({
       tariffCode: tariff.code,
-      distanceMeters,
-      waitingSeconds: 0,
-      stopsCount: 0,
+      pickupLat: booking.pickup.latitude,
+      pickupLng: booking.pickup.longitude,
+      destinationLat: booking.dropoff.latitude,
+      destinationLng: booking.dropoff.longitude,
     });
     booking.setEstimate(estimate);
     return estimate;
@@ -46,25 +41,15 @@ export function useBookingFlow() {
     }
 
     await fetchPassengerProfile();
-    const order = await createOrder({
-      tariffId: booking.selectedTariff.id,
+    const order = await booking.createOrder({
+      tariffCode: booking.selectedTariff.code,
       pickupAddress: booking.pickup.address,
       pickupLat: booking.pickup.latitude,
       pickupLng: booking.pickup.longitude,
-      dropoffAddress: booking.dropoff.address,
-      dropoffLat: booking.dropoff.latitude,
-      dropoffLng: booking.dropoff.longitude,
+      destinationAddress: booking.dropoff.address,
+      destinationLat: booking.dropoff.latitude,
+      destinationLng: booking.dropoff.longitude,
     });
-    booking.setActiveOrder(order);
-
-    if (auth.accessToken) {
-      getTaxiSocket(auth.accessToken).emit('order.dispatch', {
-        orderId: order.id,
-        radiusMeters: 5000,
-        limit: 8,
-      });
-    }
-
     router.push(`/trip/${order.id}`);
   }
 

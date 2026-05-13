@@ -11,7 +11,7 @@ export async function loginDriver(phone: string): Promise<TokenPair> {
 
 export async function fetchDriverOrders(): Promise<Order[]> {
   const response = await api.get<ApiResponse<Order[]>>('/orders');
-  return response.data.data;
+  return response.data.data.map(normalizeOrder);
 }
 
 export async function fetchCurrentOffer(): Promise<OrderOffer | null> {
@@ -26,7 +26,7 @@ export async function fetchAvailableOffers(): Promise<OrderOffer[]> {
 
 export async function acceptOrderOffer(offerId: string): Promise<Order> {
   const response = await api.post<ApiResponse<Order>>(`/orders/offers/${offerId}/accept`);
-  return response.data.data;
+  return normalizeOrder(response.data.data);
 }
 
 export async function rejectOrderOffer(offerId: string) {
@@ -101,6 +101,10 @@ function normalizeOffer(offer: OrderOffer | null): OrderOffer | null {
       destinationLat: offer.destinationLat ?? legacyOffer.order.dropoffLat,
       destinationLng: offer.destinationLng ?? legacyOffer.order.dropoffLng,
       tariffCode: offer.tariffCode ?? legacyOffer.order.tariff?.code ?? legacyOffer.order.tariff?.name,
+      distanceKm: offer.distanceKm ?? getOrderDistanceKm(legacyOffer.order as Order),
+      routeDurationMinutes: offer.routeDurationMinutes ?? (legacyOffer.order as Order).routeDurationMinutes,
+      routeGeometry: offer.routeGeometry ?? (legacyOffer.order as Order).routeGeometry,
+      estimatedPrice: offer.estimatedPrice ?? (legacyOffer.order as Order).estimatedPrice ?? (legacyOffer.order as Order).fareCents,
     };
   }
   return {
@@ -111,4 +115,25 @@ function normalizeOffer(offer: OrderOffer | null): OrderOffer | null {
     destinationLng: offer.destinationLng ?? legacyOffer.dropoffLng ?? 0,
     tariffCode: offer.tariffCode ?? legacyOffer.tariff?.code ?? legacyOffer.tariff?.name,
   };
+}
+
+function normalizeOrder(order: Order): Order {
+  return {
+    ...order,
+    destinationAddress: order.destinationAddress ?? order.dropoffAddress,
+    destinationLat: order.destinationLat ?? order.dropoffLat,
+    destinationLng: order.destinationLng ?? order.dropoffLng,
+    distanceKm: getOrderDistanceKm(order),
+    estimatedPrice: order.estimatedPrice ?? order.fareCents,
+  };
+}
+
+function getOrderDistanceKm(order: Pick<Order, 'distanceKm' | 'distanceMeters'>) {
+  if (typeof order.distanceKm === 'number') {
+    return order.distanceKm;
+  }
+  if (typeof order.distanceMeters === 'number') {
+    return Number((order.distanceMeters / 1000).toFixed(1));
+  }
+  return undefined;
 }

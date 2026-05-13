@@ -132,6 +132,8 @@ function normalizeSocketOffer(offer: OrderOffer): OrderOffer {
     dropoffAddress?: string;
     dropoffLat?: number | string;
     dropoffLng?: number | string;
+    distanceMeters?: number;
+    fareCents?: number;
     tariff?: { code?: string; name?: string };
   };
   return {
@@ -141,5 +143,17 @@ function normalizeSocketOffer(offer: OrderOffer): OrderOffer {
     destinationLat: offer.destinationLat ?? legacyOffer.dropoffLat ?? 0,
     destinationLng: offer.destinationLng ?? legacyOffer.dropoffLng ?? 0,
     tariffCode: offer.tariffCode ?? legacyOffer.tariff?.code ?? legacyOffer.tariff?.name,
+    distanceKm: offer.distanceKm ?? getDistanceKm(legacyOffer),
+    estimatedPrice: offer.estimatedPrice ?? legacyOffer.fareCents,
   };
+}
+
+function getDistanceKm(order: { distanceKm?: number; distanceMeters?: number }) {
+  if (typeof order.distanceKm === 'number') {
+    return order.distanceKm;
+  }
+  if (typeof order.distanceMeters === 'number') {
+    return Number((order.distanceMeters / 1000).toFixed(1));
+  }
+  return undefined;
 }

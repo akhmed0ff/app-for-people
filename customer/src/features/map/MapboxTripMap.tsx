@@ -30,16 +30,20 @@ type MapboxTripMapProps = {
 const tashkent: [number, number] = [69.2401, 41.2995];
 
 export function MapboxTripMap({ pickup, dropoff, driverLocation }: MapboxTripMapProps) {
-  const center: [number, number] = pickup
-    ? [pickup.longitude, pickup.latitude]
-    : driverLocation
-      ? [driverLocation.longitude, driverLocation.latitude]
-      : tashkent;
+  const center: [number, number] =
+    pickup && dropoff
+      ? [(pickup.longitude + dropoff.longitude) / 2, (pickup.latitude + dropoff.latitude) / 2]
+      : pickup
+        ? [pickup.longitude, pickup.latitude]
+        : driverLocation
+          ? [driverLocation.longitude, driverLocation.latitude]
+          : tashkent;
+  const zoomLevel = pickup && dropoff ? 11 : 12;
 
   return (
     <View style={styles.wrap}>
       <MapView style={styles.map} scaleBarEnabled={false}>
-        <Camera centerCoordinate={center} zoomLevel={12} />
+        <Camera centerCoordinate={center} zoomLevel={zoomLevel} />
         {pickup ? (
           <PointAnnotation coordinate={[pickup.longitude, pickup.latitude]} id="pickup">
             <View style={[styles.marker, styles.pickupMarker]} />

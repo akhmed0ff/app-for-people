@@ -7,6 +7,7 @@ import { useConnectionStore } from '../../shared/store/connection.store';
 import { useDriverStore } from '../../shared/store/driver.store';
 import { useOrdersStore } from '../../shared/store/orders.store';
 import { OrderStatus } from '../../shared/api/types';
+import { getOrderDestination } from '../../shared/utils/route';
 
 export function useTripControls(orderId: string) {
   const token = useAuthStore((state) => state.accessToken);
@@ -56,12 +57,21 @@ export function useTripControls(orderId: string) {
     if (!token || !location || !activeOrder) {
       return;
     }
+    const destination = activeOrder.status === 'IN_PROGRESS'
+      ? getOrderDestination(activeOrder)
+      : {
+          latitude: Number(activeOrder.pickupLat),
+          longitude: Number(activeOrder.pickupLng),
+        };
+    if (!destination) {
+      return;
+    }
     getDriverSocket(token).emit('eta.request', {
       orderId,
       driverLat: location.latitude,
       driverLng: location.longitude,
-      destinationLat: Number(activeOrder.pickupLat),
-      destinationLng: Number(activeOrder.pickupLng),
+      destinationLat: destination.latitude,
+      destinationLng: destination.longitude,
     });
   }, [activeOrder, location, orderId, token]);
 

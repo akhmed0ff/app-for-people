@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PaymentMethod } from '@prisma/client';
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class CreateOrderDto {
   @ApiProperty()
@@ -12,6 +12,11 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   tariffId?: string;
+
+  @ApiProperty({ required: false, example: 'ECONOMY' })
+  @IsOptional()
+  @IsString()
+  tariffCode?: string;
 
   @ApiProperty()
   @IsString()
@@ -25,17 +30,41 @@ export class CreateOrderDto {
   @IsNumber()
   pickupLng!: number;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsString()
-  dropoffAddress!: string;
+  dropoffAddress?: string;
 
-  @ApiProperty()
-  @IsNumber()
-  dropoffLat!: number;
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  destinationAddress?: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
+  @IsOptional()
   @IsNumber()
-  dropoffLng!: number;
+  dropoffLat?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  destinationLat?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  dropoffLng?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsNumber()
+  destinationLng?: number;
+
+  @ApiProperty({ required: false, description: 'Development-only manual fallback when Mapbox is not configured.' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  distanceMeters?: number;
 
   @ApiProperty({ enum: PaymentMethod, default: PaymentMethod.CASH, required: false })
   @IsOptional()

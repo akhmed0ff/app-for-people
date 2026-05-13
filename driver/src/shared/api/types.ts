@@ -29,9 +29,21 @@ export type OrderOffer = {
   destinationLng: number | string;
   tariffCode?: string;
   estimatedPrice?: number;
+  distanceKm?: number;
+  routeDurationMinutes?: number | null;
+  routeGeometry?: string | null;
   distanceToPickupKm?: number;
   expiresAt: string;
   status?: OrderOfferStatus;
+};
+
+export type PassengerInfo = {
+  id?: string;
+  user?: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  };
 };
 
 export type Order = {
@@ -43,8 +55,18 @@ export type Order = {
   dropoffAddress: string;
   dropoffLat: number | string;
   dropoffLng: number | string;
+  destinationAddress?: string;
+  destinationLat?: number | string;
+  destinationLng?: number | string;
+  distanceKm?: number;
+  distanceMeters?: number;
+  durationSeconds?: number;
+  routeDurationMinutes?: number | null;
+  routeGeometry?: string | null;
+  estimatedPrice?: number;
   fareCents?: number;
   currency: string;
+  passenger?: PassengerInfo | null;
   createdAt: string;
   updatedAt?: string;
 };

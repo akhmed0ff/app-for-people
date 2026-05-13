@@ -31,6 +31,22 @@ export type Driver = {
   user: User;
 };
 
+export type OrderOfferStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELED';
+
+export type OrderOffer = {
+  id: string;
+  orderId: string;
+  driverId: string;
+  status: OrderOfferStatus;
+  offeredAt: string;
+  expiresAt: string;
+  respondedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  driver?: Driver | null;
+  distanceToPickupKm?: number;
+};
+
 export type Passenger = {
   id: string;
   rating: string;
@@ -43,11 +59,21 @@ export type Order = {
   status: string;
   pickupAddress: string;
   dropoffAddress: string;
+  tariff?: Tariff | null;
+  tariffId?: string;
+  distanceMeters?: number;
+  durationSeconds?: number;
   fareCents?: number;
   currency: string;
   createdAt: string;
+  acceptedAt?: string | null;
+  arrivedAt?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  canceledAt?: string | null;
   passenger?: Passenger;
   driver?: Driver;
+  offers?: OrderOffer[];
 };
 
 export type Tariff = {

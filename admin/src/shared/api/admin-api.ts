@@ -1,5 +1,5 @@
 import { api } from './client';
-import { ApiResponse, Driver, Order, Passenger, Payment, Tariff, TokenPair, User } from './types';
+import { ApiResponse, Driver, Order, OrderOffer, Passenger, Payment, Tariff, TokenPair, User } from './types';
 
 export async function loginAdmin(): Promise<TokenPair> {
   const response = await api.post<ApiResponse<TokenPair>>('/auth/dev-login', { role: 'ADMIN' });
@@ -24,6 +24,34 @@ export async function fetchPassengers(): Promise<Passenger[]> {
 export async function fetchOrders(): Promise<Order[]> {
   const response = await api.get<ApiResponse<Order[]>>('/orders');
   return response.data.data;
+}
+
+export async function fetchAdminOrders(): Promise<Order[]> {
+  try {
+    const response = await api.get<ApiResponse<Order[]>>('/admin/orders');
+    return response.data.data;
+  } catch {
+    return fetchOrders();
+  }
+}
+
+export async function fetchAdminOrder(id: string): Promise<Order | null> {
+  try {
+    const response = await api.get<ApiResponse<Order>>(`/admin/orders/${id}`);
+    return response.data.data;
+  } catch {
+    const orders = await fetchAdminOrders();
+    return orders.find((order) => order.id === id) ?? null;
+  }
+}
+
+export async function fetchOrderOffers(orderId: string): Promise<OrderOffer[] | null> {
+  try {
+    const response = await api.get<ApiResponse<OrderOffer[]>>(`/admin/orders/${orderId}/offers`);
+    return response.data.data;
+  } catch {
+    return null;
+  }
 }
 
 export async function fetchUsers(): Promise<User[]> {

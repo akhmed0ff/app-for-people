@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -161,6 +162,8 @@ model Order {
   dropoffLng      Decimal         @db.Decimal(10, 7)
   distanceMeters  Int?
   durationSeconds Int?
+  routeDurationMinutes Int?
+  routeGeometry   String?
   fareCents       Int?
   currency        String          @default("UZS")
   paymentMethod   PaymentMethod   @default(CASH)

@@ -1,5 +1,5 @@
 import { api } from './client';
-import { ApiResponse, Order, PriceEstimate, Tariff, TokenPair } from './types';
+import { ApiResponse, Order, RouteEstimate, Tariff, TokenPair } from './types';
 
 export async function devPassengerLogin(): Promise<TokenPair> {
   const response = await api.post<ApiResponse<TokenPair>>('/auth/dev-login', {
@@ -26,24 +26,30 @@ export async function fetchPassengerProfile(): Promise<{ id: string }> {
   return response.data.data;
 }
 
-export async function estimatePrice(input: {
+export async function fetchCurrentUser(): Promise<{ id: string; role: string }> {
+  const response = await api.get<ApiResponse<{ id: string; role: string }>>('/auth/me');
+  return response.data.data;
+}
+
+export async function estimateRoute(input: {
+  pickupLat: number;
+  pickupLng: number;
+  destinationLat: number;
+  destinationLng: number;
   tariffCode: string;
-  distanceMeters: number;
-  waitingSeconds: number;
-  stopsCount?: number;
-}): Promise<PriceEstimate> {
-  const response = await api.post<ApiResponse<PriceEstimate>>('/pricing/estimate', input);
+}): Promise<RouteEstimate> {
+  const response = await api.post<ApiResponse<RouteEstimate>>('/routing/estimate', input);
   return response.data.data;
 }
 
 export async function createOrder(input: {
-  tariffId?: string;
+  tariffCode: string;
   pickupAddress: string;
   pickupLat: number;
   pickupLng: number;
-  dropoffAddress: string;
-  dropoffLat: number;
-  dropoffLng: number;
+  destinationAddress: string;
+  destinationLat: number;
+  destinationLng: number;
 }): Promise<Order> {
   const response = await api.post<ApiResponse<Order>>('/orders', {
     ...input,
@@ -57,8 +63,17 @@ export async function fetchOrders(): Promise<Order[]> {
   return response.data.data;
 }
 
+export async function fetchMyOrders(): Promise<Order[]> {
+  try {
+    const response = await api.get<ApiResponse<Order[]>>('/orders/my');
+    return response.data.data;
+  } catch {
+    return fetchOrders();
+  }
+}
+
 export async function fetchActiveOrder(): Promise<Order | null> {
-  const orders = await fetchOrders();
+  const orders = await fetchMyOrders();
   return (
     orders.find((order) => !['COMPLETED', 'CANCELED'].includes(order.status)) ?? null
   );

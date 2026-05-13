@@ -15,6 +15,25 @@ export default function DashboardPage() {
   const activeDrivers = drivers.data?.filter((driver) => driver.status === 'ONLINE').length ?? 0;
   const openOrders =
     orders.data?.filter((order) => !['COMPLETED', 'CANCELED'].includes(order.status)).length ?? 0;
+  const searchingOrders = orders.data?.filter((order) => order.status === 'SEARCHING').length ?? 0;
+  const offers = orders.data?.flatMap((order) => order.offers ?? []) ?? [];
+  const hasOffersData = (orders.data ?? []).some((order) => Array.isArray(order.offers));
+  const today = new Date().toDateString();
+  const pendingOffers = hasOffersData ? offers.filter((offer) => offer.status === 'PENDING').length : 'Нет данных';
+  const rejectedToday = hasOffersData
+    ? offers.filter((offer) => offer.status === 'REJECTED' && new Date(offer.updatedAt).toDateString() === today).length
+    : 'Нет данных';
+  const expiredToday = hasOffersData
+    ? offers.filter((offer) => offer.status === 'EXPIRED' && new Date(offer.updatedAt).toDateString() === today).length
+    : 'Нет данных';
+  const noDriverOrders = hasOffersData
+    ? (orders.data ?? []).filter(
+        (order) =>
+          order.status === 'SEARCHING' &&
+          (order.offers?.length ?? 0) > 0 &&
+          order.offers?.every((offer) => ['REJECTED', 'EXPIRED', 'CANCELED'].includes(offer.status)),
+      ).length
+    : 'Нет данных';
   const revenue =
     payments.data
       ?.filter((payment) => payment.status === 'SUCCESS')
@@ -31,6 +50,13 @@ export default function DashboardPage() {
         <MetricCard label="Active drivers" value={activeDrivers} />
         <MetricCard label="Open orders" value={openOrders} />
         <MetricCard label="Revenue" value={formatMoney(revenue)} />
+      </div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <MetricCard label="Заказы в поиске" value={searchingOrders} />
+        <MetricCard label="Offers pending" value={pendingOffers} />
+        <MetricCard label="Offers rejected today" value={rejectedToday} />
+        <MetricCard label="Offers expired today" value={expiredToday} />
+        <MetricCard label="Заказы без водителя" value={noDriverOrders} />
       </div>
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="rounded-lg border border-line bg-surface p-4">

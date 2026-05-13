@@ -19,6 +19,7 @@ import { PassengersModule } from './modules/passengers/passengers.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { PricingModule } from './modules/pricing/pricing.module';
 import { PushModule } from './modules/push/push.module';
+import { RoutingModule } from './modules/routing/routing.module';
 import { SocketsModule } from './modules/sockets/sockets.module';
 import { TariffsModule } from './modules/tariffs/tariffs.module';
 import { UsersModule } from './modules/users/users.module';
@@ -50,6 +51,7 @@ import { UsersModule } from './modules/users/users.module';
     OrdersModule,
     TariffsModule,
     PricingModule,
+    RoutingModule,
     PaymentsModule,
     BalanceModule,
     PushModule,

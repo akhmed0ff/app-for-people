@@ -27,16 +27,18 @@ export function OrderOfferCard({
         <Text style={styles.timer}>{secondsLeft}s</Text>
       </View>
       <Text style={styles.label}>Подача</Text>
-      <Text style={styles.title}>{offer.pickupAddress}</Text>
+      <Text style={styles.title}>{offer.pickupAddress || '-'}</Text>
       <Text style={styles.label}>Назначение</Text>
-      <Text style={styles.route}>{offer.destinationAddress}</Text>
+      <Text style={styles.route}>{offer.destinationAddress || '-'}</Text>
       <View style={styles.metaGrid}>
         <Text style={styles.meta}>Тариф: {offer.tariffCode ?? '-'}</Text>
-        <Text style={styles.meta}>
-          Цена: {offer.estimatedPrice ? formatMoney(offer.estimatedPrice) : '-'}
-        </Text>
+        <Text style={styles.meta}>Цена: {offer.estimatedPrice ? formatMoney(offer.estimatedPrice) : '-'}</Text>
         <Text style={styles.meta}>
           До подачи: {offer.distanceToPickupKm ? `${offer.distanceToPickupKm.toFixed(1)} км` : '-'}
+        </Text>
+        <Text style={styles.meta}>Маршрут: {offer.distanceKm ? `${offer.distanceKm.toFixed(1)} км` : '-'}</Text>
+        <Text style={styles.meta}>
+          ETA маршрута: {offer.routeDurationMinutes ? `${offer.routeDurationMinutes} мин` : '-'}
         </Text>
       </View>
       <View style={styles.actions}>

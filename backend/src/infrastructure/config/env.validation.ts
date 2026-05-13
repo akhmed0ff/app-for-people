@@ -5,17 +5,17 @@ const required = [
   'REDIS_URL',
   'JWT_ACCESS_SECRET',
   'JWT_REFRESH_SECRET',
-  'MAPBOX_ACCESS_TOKEN',
 ];
 
 export function validateEnv(env: Env) {
-  const missing = required.filter((key) => !env[key]);
+  const nodeEnv = env.NODE_ENV ?? 'development';
+  const productionRequired = nodeEnv === 'production' ? ['MAPBOX_ACCESS_TOKEN'] : [];
+  const missing = [...required, ...productionRequired].filter((key) => !env[key]);
 
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
 
-  const nodeEnv = env.NODE_ENV ?? 'development';
   if (nodeEnv === 'production') {
     const unsafeSecrets = ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'].filter((key) =>
       env[key]?.startsWith('replace-with'),

@@ -167,6 +167,12 @@ function normalizeOffer(offer: OrderOffer | null): OrderOffer | null {
       dropoffAddress: string;
       dropoffLat: number | string;
       dropoffLng: number | string;
+      distanceMeters?: number;
+      distanceKm?: number;
+      routeDurationMinutes?: number | null;
+      routeGeometry?: string | null;
+      fareCents?: number;
+      estimatedPrice?: number;
       tariff?: { code?: string; name?: string };
     };
   };
@@ -184,5 +190,19 @@ function normalizeOffer(offer: OrderOffer | null): OrderOffer | null {
     destinationLat: offer.destinationLat ?? legacyOffer.order.dropoffLat,
     destinationLng: offer.destinationLng ?? legacyOffer.order.dropoffLng,
     tariffCode: offer.tariffCode ?? legacyOffer.order.tariff?.code ?? legacyOffer.order.tariff?.name,
+    distanceKm: offer.distanceKm ?? getDistanceKm(legacyOffer.order),
+    routeDurationMinutes: offer.routeDurationMinutes ?? legacyOffer.order.routeDurationMinutes,
+    routeGeometry: offer.routeGeometry ?? legacyOffer.order.routeGeometry,
+    estimatedPrice: offer.estimatedPrice ?? legacyOffer.order.estimatedPrice ?? legacyOffer.order.fareCents,
   };
+}
+
+function getDistanceKm(order: { distanceKm?: number; distanceMeters?: number }) {
+  if (typeof order.distanceKm === 'number') {
+    return order.distanceKm;
+  }
+  if (typeof order.distanceMeters === 'number') {
+    return Number((order.distanceMeters / 1000).toFixed(1));
+  }
+  return undefined;
 }
