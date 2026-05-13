@@ -26,10 +26,67 @@ body {
 body {
   background: #f7f8fa;
   color: rgb(var(--text));
+  margin: 0;
 }
 
 .dark body {
   background: #0f141b;
+}
+
+.admin-shell {
+  min-height: 100vh;
+}
+
+.admin-brand {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  min-height: 64px;
+  padding: 12px 16px;
+}
+
+.admin-brand-subtitle,
+.admin-header-subtitle {
+  display: block;
+  font-size: 12px;
+}
+
+.admin-header {
+  align-items: center;
+  border-bottom: 1px solid #eef1f5;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.admin-content {
+  margin: 0 auto;
+  max-width: 1440px;
+  padding: 24px;
+  width: 100%;
+}
+
+.admin-page-header {
+  align-items: flex-end;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .admin-header {
+    padding: 0 12px;
+  }
+
+  .admin-content {
+    padding: 16px;
+  }
+
+  .admin-page-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 .row-actions {

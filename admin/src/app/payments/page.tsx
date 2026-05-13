@@ -1,19 +1,20 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
 import { useQuery } from '@tanstack/react-query';
+import { Table, Tag } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { fetchPayments } from '../../shared/api/admin-api';
 import { Payment } from '../../shared/api/types';
-import { DataTable } from '../../shared/components/DataTable';
 import { PageHeader } from '../../shared/components/PageHeader';
 import { formatDate, formatMoney } from '../../shared/utils/format';
 
-const columns: ColumnDef<Payment>[] = [
-  { accessorKey: 'type', header: 'Type' },
-  { accessorKey: 'status', header: 'Status' },
-  { accessorKey: 'provider', header: 'Provider' },
-  { cell: ({ row }) => formatMoney(row.original.amountCents, row.original.currency), header: 'Amount' },
-  { accessorFn: (row) => formatDate(row.createdAt), header: 'Created' },
+const columns: ColumnsType<Payment> = [
+  { title: 'Type', dataIndex: 'type' },
+  { title: 'Status', dataIndex: 'status', render: (status: string) => <Tag color={statusColor(status)}>{status}</Tag> },
+  { title: 'Provider', dataIndex: 'provider', render: (provider?: string) => provider ?? '-' },
+  { title: 'Amount', render: (_, row) => formatMoney(row.amountCents, row.currency) },
+  { title: 'Description', dataIndex: 'description', render: (description?: string) => description ?? '-' },
+  { title: 'Created', dataIndex: 'createdAt', render: (value: string) => formatDate(value) },
 ];
 
 export default function PaymentsPage() {
@@ -22,7 +23,20 @@ export default function PaymentsPage() {
   return (
     <>
       <PageHeader description="Transaction monitoring and payment reconciliation." title="Payments" />
-      <DataTable columns={columns} data={payments.data ?? []} searchPlaceholder="Search payments" />
+      <Table
+        columns={columns}
+        dataSource={payments.data ?? []}
+        loading={payments.isLoading}
+        pagination={{ pageSize: 10, showSizeChanger: true }}
+        rowKey="id"
+        scroll={{ x: 900 }}
+      />
     </>
   );
+}
+
+function statusColor(status: string) {
+  if (status === 'SUCCESS') return 'green';
+  if (status === 'FAILED' || status === 'CANCELED') return 'red';
+  return 'gold';
 }

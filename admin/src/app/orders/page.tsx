@@ -1,6 +1,21 @@
 'use client';
 
+import { ReloadOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
+import {
+  Button,
+  Descriptions,
+  Empty,
+  Modal,
+  Select,
+  Space,
+  Spin,
+  Table,
+  Tag,
+  Typography,
+} from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import { AntCard } from '../../shared/components/AntCard';
 import { useMemo, useState } from 'react';
 import { fetchAdminOrders, fetchOrderOffers } from '../../shared/api/admin-api';
 import { Order, OrderOffer } from '../../shared/api/types';
@@ -33,195 +48,161 @@ export default function OrdersPage() {
 
   const activeOrders = (orders.data ?? []).filter((order) => !['COMPLETED', 'CANCELED'].includes(order.status)).length;
 
+  const columns: ColumnsType<Order> = [
+    { title: 'ID', dataIndex: 'id', render: (id: string) => <Typography.Text strong>{shortId(id)}</Typography.Text> },
+    { title: 'Status', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
+    { title: 'Passenger', render: (_, order) => formatPerson(order.passenger?.user) },
+    { title: 'Driver', render: (_, order) => formatPerson(order.driver?.user) },
+    { title: 'Tariff', render: (_, order) => order.tariff?.code ?? order.tariff?.name ?? '-' },
+    { title: 'Matching', render: (_, order) => <MatchingTag order={order} /> },
+    { title: 'Price', render: (_, order) => formatMoney(order.fareCents ?? 0, order.currency) },
+    {
+      title: 'Route',
+      render: (_, order) => (
+        <Space direction="vertical" size={0}>
+          <Typography.Text>{order.pickupAddress}</Typography.Text>
+          <Typography.Text type="secondary">{order.dropoffAddress}</Typography.Text>
+        </Space>
+      ),
+    },
+    { title: 'Created', dataIndex: 'createdAt', render: (value: string) => formatDate(value) },
+  ];
+
   return (
     <>
-      <PageHeader description={`${activeOrders} активных заказов под наблюдением.`} title="Заказы" />
-      <section className="mb-4 rounded-lg border border-line bg-surface p-4">
-        <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-          <label className="grid gap-1 text-sm font-bold">
-            Статус заказа
-            <select className="rounded-md border border-line bg-transparent p-2" onChange={(event) => setStatusFilter(event.target.value)} value={statusFilter}>
-              <option value="all">Все</option>
-              <option value="SEARCHING">SEARCHING</option>
-              <option value="DRIVER_ASSIGNED">DRIVER_ASSIGNED</option>
-              <option value="DRIVER_ARRIVED">DRIVER_ARRIVED</option>
-              <option value="IN_PROGRESS">IN_PROGRESS</option>
-              <option value="COMPLETED">COMPLETED</option>
-              <option value="CANCELED">CANCELED</option>
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm font-bold">
-            Matching
-            <select className="rounded-md border border-line bg-transparent p-2" onChange={(event) => setMatchingFilter(event.target.value as MatchingFilter)} value={matchingFilter}>
-              <option value="all">Все</option>
-              <option value="pending">Есть pending offer</option>
-              <option value="no-drivers">Нет водителей</option>
-              <option value="accepted">Водитель назначен</option>
-              <option value="stuck">Завис в поиске</option>
-            </select>
-          </label>
-          <button className="self-end rounded-md border border-line px-4 py-2 font-bold" disabled={orders.isFetching} onClick={() => void orders.refetch()} type="button">
-            {orders.isFetching ? 'Обновляем...' : 'Обновить'}
-          </button>
-        </div>
-      </section>
+      <PageHeader description={`${activeOrders} активных заказов под наблюдением.`} title="Orders" />
+      <AntCard style={{ marginBottom: 16 }}>
+        <Space wrap>
+          <Select
+            onChange={setStatusFilter}
+            options={[
+              { value: 'all', label: 'Все статусы' },
+              { value: 'SEARCHING', label: 'SEARCHING' },
+              { value: 'DRIVER_ASSIGNED', label: 'DRIVER_ASSIGNED' },
+              { value: 'DRIVER_ARRIVED', label: 'DRIVER_ARRIVED' },
+              { value: 'IN_PROGRESS', label: 'IN_PROGRESS' },
+              { value: 'COMPLETED', label: 'COMPLETED' },
+              { value: 'CANCELED', label: 'CANCELED' },
+            ]}
+            style={{ minWidth: 220 }}
+            value={statusFilter}
+          />
+          <Select
+            onChange={(value: MatchingFilter) => setMatchingFilter(value)}
+            options={[
+              { value: 'all', label: 'Все matching статусы' },
+              { value: 'pending', label: 'Есть pending offer' },
+              { value: 'no-drivers', label: 'Нет водителей' },
+              { value: 'accepted', label: 'Водитель назначен' },
+              { value: 'stuck', label: 'Завис в поиске' },
+            ]}
+            style={{ minWidth: 240 }}
+            value={matchingFilter}
+          />
+          <Button icon={<ReloadOutlined />} loading={orders.isFetching} onClick={() => void orders.refetch()}>
+            Обновить
+          </Button>
+        </Space>
+      </AntCard>
 
-      {orders.isError ? <p className="rounded-lg border border-line bg-surface p-4 font-bold text-red-600">Не удалось загрузить заказы.</p> : null}
+      <Table
+        columns={columns}
+        dataSource={filteredOrders}
+        loading={orders.isLoading}
+        locale={{ emptyText: orders.isError ? 'Не удалось загрузить заказы' : 'Заказов по фильтрам нет' }}
+        onRow={(order: Order) => ({ onClick: () => setSelectedOrder(order) })}
+        pagination={{ pageSize: 10, showSizeChanger: true }}
+        rowKey="id"
+        scroll={{ x: 1200 }}
+      />
 
-      <section className="rounded-lg border border-line bg-surface">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="bg-black/[0.03] text-xs uppercase text-muted dark:bg-white/[0.04]">
-              <tr>
-                <th className="px-4 py-3 font-black">ID</th>
-                <th className="px-4 py-3 font-black">Статус</th>
-                <th className="px-4 py-3 font-black">Пассажир</th>
-                <th className="px-4 py-3 font-black">Водитель</th>
-                <th className="px-4 py-3 font-black">Тариф</th>
-                <th className="px-4 py-3 font-black">Matching</th>
-                <th className="px-4 py-3 font-black">Стоимость</th>
-                <th className="px-4 py-3 font-black">Маршрут</th>
-                <th className="px-4 py-3 font-black">Создан</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredOrders.map((order) => (
-                <tr className="cursor-pointer border-t border-line hover:bg-black/[0.02] dark:hover:bg-white/[0.03]" key={order.id} onClick={() => setSelectedOrder(order)}>
-                  <td className="whitespace-nowrap px-4 py-3 font-black">{shortId(order.id)}</td>
-                  <td className="whitespace-nowrap px-4 py-3"><StatusBadge label={order.status} /></td>
-                  <td className="whitespace-nowrap px-4 py-3 font-semibold">{formatPerson(order.passenger?.user)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 font-semibold">{formatPerson(order.driver?.user)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 font-semibold">{order.tariff?.code ?? order.tariff?.name ?? '-'}</td>
-                  <td className="whitespace-nowrap px-4 py-3"><MatchingBadge order={order} /></td>
-                  <td className="whitespace-nowrap px-4 py-3 font-semibold">{formatMoney(order.fareCents ?? 0, order.currency)}</td>
-                  <td className="min-w-72 px-4 py-3 font-semibold">
-                    <p>{order.pickupAddress}</p>
-                    <p className="text-muted">{order.dropoffAddress}</p>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 font-semibold">{formatDate(order.createdAt)}</td>
-                </tr>
-              ))}
-              {!filteredOrders.length ? (
-                <tr>
-                  <td className="px-4 py-8 text-center font-bold text-muted" colSpan={9}>Заказов по выбранным фильтрам нет.</td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {selectedOrder ? <OrderDetailsModal onClose={() => setSelectedOrder(null)} order={selectedOrder} /> : null}
+      <OrderDetailsModal onClose={() => setSelectedOrder(null)} order={selectedOrder} />
     </>
   );
 }
 
-function OrderDetailsModal({ order, onClose }: { order: Order; onClose: () => void }) {
+function OrderDetailsModal({ order, onClose }: { order: Order | null; onClose: () => void }) {
   const offers = useQuery({
-    queryKey: ['order-offers', order.id],
-    queryFn: () => fetchOrderOffers(order.id),
+    enabled: Boolean(order),
+    queryKey: ['order-offers', order?.id],
+    queryFn: () => fetchOrderOffers(order!.id),
   });
-  const orderOffers = offers.data ?? order.offers ?? null;
+  const orderOffers = offers.data ?? order?.offers ?? null;
 
   return (
-    <div className="modal-backdrop">
-      <section className="modal max-h-[90vh] max-w-4xl overflow-y-auto">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2>Заказ {shortId(order.id)}</h2>
-            <p className="text-sm font-bold text-muted">
-              {order.pickupAddress} {'->'} {order.dropoffAddress}
-            </p>
-          </div>
-          <button onClick={onClose} type="button">Закрыть</button>
-        </div>
+    <Modal
+      footer={null}
+      onCancel={onClose}
+      open={Boolean(order)}
+      title={order ? `Заказ ${shortId(order.id)}` : ''}
+      width={980}
+    >
+      {order ? (
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <Descriptions bordered column={{ md: 2, xs: 1 }} size="small">
+            <Descriptions.Item label="Status">{order.status}</Descriptions.Item>
+            <Descriptions.Item label="Matching">{getMatchingStatus(order).label}</Descriptions.Item>
+            <Descriptions.Item label="Passenger">{formatPerson(order.passenger?.user)}</Descriptions.Item>
+            <Descriptions.Item label="Driver">{formatPerson(order.driver?.user)}</Descriptions.Item>
+            <Descriptions.Item label="Tariff">{order.tariff?.code ?? order.tariff?.name ?? '-'}</Descriptions.Item>
+            <Descriptions.Item label="Price">{formatMoney(order.fareCents ?? 0, order.currency)}</Descriptions.Item>
+            <Descriptions.Item label="Pickup">{order.pickupAddress}</Descriptions.Item>
+            <Descriptions.Item label="Destination">{order.dropoffAddress}</Descriptions.Item>
+            <Descriptions.Item label="Created">{formatDate(order.createdAt)}</Descriptions.Item>
+            <Descriptions.Item label="Accepted">{formatDate(order.acceptedAt ?? undefined)}</Descriptions.Item>
+            <Descriptions.Item label="Arrived">{formatDate(order.arrivedAt ?? undefined)}</Descriptions.Item>
+            <Descriptions.Item label="Started">{formatDate(order.startedAt ?? undefined)}</Descriptions.Item>
+            <Descriptions.Item label="Completed">{formatDate(order.completedAt ?? undefined)}</Descriptions.Item>
+            <Descriptions.Item label="Canceled">{formatDate(order.canceledAt ?? undefined)}</Descriptions.Item>
+          </Descriptions>
 
-        <div className="grid gap-3 md:grid-cols-2">
-          <Info label="Статус" value={order.status} />
-          <Info label="Matching" value={getMatchingStatus(order).label} />
-          <Info label="Пассажир" value={formatPerson(order.passenger?.user)} />
-          <Info label="Водитель" value={formatPerson(order.driver?.user)} />
-          <Info label="Тариф" value={order.tariff?.code ?? order.tariff?.name ?? '-'} />
-          <Info label="Стоимость" value={formatMoney(order.fareCents ?? 0, order.currency)} />
-          <Info label="Подача" value={order.pickupAddress} />
-          <Info label="Назначение" value={order.dropoffAddress} />
-        </div>
-
-        <div className="grid gap-2 md:grid-cols-3">
-          {[
-            ['createdAt', order.createdAt],
-            ['acceptedAt', order.acceptedAt],
-            ['arrivedAt', order.arrivedAt],
-            ['startedAt', order.startedAt],
-            ['completedAt', order.completedAt],
-            ['canceledAt', order.canceledAt],
-          ].map(([label, value]) => (
-            <Info key={label ?? ''} label={label ?? ''} value={formatDate(value || undefined)} />
-          ))}
-        </div>
-
-        <div>
-          <h3 className="mb-3 text-lg font-black">Matching offers</h3>
-          {offers.isLoading ? <p className="font-bold text-muted">Загружаем историю предложений...</p> : null}
-          {orderOffers === null ? (
-            <p className="rounded-md border border-line p-3 font-bold text-muted">История предложений пока недоступна.</p>
-          ) : orderOffers.length ? (
-            <div className="overflow-x-auto rounded-md border border-line">
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-black/[0.03] text-xs uppercase text-muted dark:bg-white/[0.04]">
-                  <tr>
-                    <th className="px-3 py-2">Водитель</th>
-                    <th className="px-3 py-2">Авто</th>
-                    <th className="px-3 py-2">Статус</th>
-                    <th className="px-3 py-2">Отправлен</th>
-                    <th className="px-3 py-2">Истекает</th>
-                    <th className="px-3 py-2">Ответ</th>
-                    <th className="px-3 py-2">До подачи</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orderOffers.map((offer) => (
-                    <tr className="border-t border-line" key={offer.id}>
-                      <td className="px-3 py-2 font-semibold">{formatPerson(offer.driver?.user) || shortId(offer.driverId)}</td>
-                      <td className="px-3 py-2 font-semibold">{formatVehicle(offer.driver)}</td>
-                      <td className="px-3 py-2"><OfferBadge status={offer.status} /></td>
-                      <td className="px-3 py-2 font-semibold">{formatDate(offer.offeredAt)}</td>
-                      <td className="px-3 py-2 font-semibold">{formatDate(offer.expiresAt)}</td>
-                      <td className="px-3 py-2 font-semibold">{formatDate(offer.respondedAt ?? undefined)}</td>
-                      <td className="px-3 py-2 font-semibold">{offer.distanceToPickupKm ? `${offer.distanceToPickupKm.toFixed(1)} км` : '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="rounded-md border border-line p-3 font-bold text-muted">Предложений по заказу пока нет.</p>
-          )}
-        </div>
-      </section>
-    </div>
+          <AntCard title="Matching offers">
+            {offers.isLoading ? <Spin /> : null}
+            {orderOffers === null ? (
+              <Empty description="История предложений пока недоступна" />
+            ) : orderOffers.length ? (
+              <Table
+                columns={offerColumns}
+                dataSource={orderOffers}
+                pagination={false}
+                rowKey="id"
+                scroll={{ x: 900 }}
+                size="small"
+              />
+            ) : (
+              <Empty description="Предложений по заказу пока нет" />
+            )}
+          </AntCard>
+        </Space>
+      ) : null}
+    </Modal>
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-line p-3">
-      <p className="text-xs font-black uppercase text-muted">{label}</p>
-      <p className="mt-1 font-bold">{value || '-'}</p>
-    </div>
-  );
-}
+const offerColumns: ColumnsType<OrderOffer> = [
+  { title: 'Driver', render: (_, offer) => formatPerson(offer.driver?.user) || shortId(offer.driverId) },
+  { title: 'Vehicle', render: (_, offer) => formatVehicle(offer.driver) },
+  { title: 'Status', dataIndex: 'status', render: (status: string) => <OfferTag status={status} /> },
+  { title: 'Offered', dataIndex: 'offeredAt', render: (value: string) => formatDate(value) },
+  { title: 'Expires', dataIndex: 'expiresAt', render: (value: string) => formatDate(value) },
+  { title: 'Responded', dataIndex: 'respondedAt', render: (value?: string | null) => formatDate(value ?? undefined) },
+  {
+    title: 'To pickup',
+    dataIndex: 'distanceToPickupKm',
+    render: (value?: number) => (value ? `${value.toFixed(1)} км` : '-'),
+  },
+];
 
-function MatchingBadge({ order }: { order: Order }) {
+function MatchingTag({ order }: { order: Order }) {
   const matching = getMatchingStatus(order);
-  return <span className={`rounded-full px-2 py-1 text-xs font-black ${matching.className}`}>{matching.label}</span>;
+  return <Tag color={matching.color}>{matching.label}</Tag>;
 }
 
-function StatusBadge({ label }: { label: string }) {
-  return <span className="rounded-full bg-black/5 px-2 py-1 text-xs font-black dark:bg-white/10">{label}</span>;
+function StatusTag({ status }: { status: string }) {
+  return <Tag color={statusColor(status)}>{status}</Tag>;
 }
 
-function OfferBadge({ status }: { status: string }) {
+function OfferTag({ status }: { status: string }) {
   const labels: Record<string, string> = {
     PENDING: 'Ожидает ответа',
     ACCEPTED: 'Принят',
@@ -229,28 +210,43 @@ function OfferBadge({ status }: { status: string }) {
     EXPIRED: 'Истек',
     CANCELED: 'Отменен',
   };
-  return <span className="rounded-full bg-black/5 px-2 py-1 text-xs font-black dark:bg-white/10">{labels[status] ?? status}</span>;
+  return <Tag color={offerColor(status)}>{labels[status] ?? status}</Tag>;
 }
 
-function getMatchingStatus(order: Order): { kind: MatchingFilter | 'unknown'; label: string; className: string } {
+function getMatchingStatus(order: Order): { kind: MatchingFilter | 'unknown'; label: string; color: string } {
   const offers = order.offers ?? [];
   if (order.status === 'DRIVER_ASSIGNED') {
-    return { kind: 'accepted', label: 'Водитель назначен', className: 'bg-emerald-100 text-emerald-800' };
+    return { kind: 'accepted', label: 'Водитель назначен', color: 'green' };
   }
   if (order.status === 'SEARCHING' && offers.some((offer) => offer.status === 'PENDING')) {
-    return { kind: 'pending', label: 'Ожидает ответа водителя', className: 'bg-blue-100 text-blue-800' };
+    return { kind: 'pending', label: 'Ожидает ответа водителя', color: 'blue' };
   }
   if (
     order.status === 'SEARCHING' &&
     offers.length > 0 &&
     offers.every((offer) => ['REJECTED', 'EXPIRED', 'CANCELED'].includes(offer.status))
   ) {
-    return { kind: 'no-drivers', label: 'Нет доступных водителей', className: 'bg-amber-100 text-amber-800' };
+    return { kind: 'no-drivers', label: 'Нет доступных водителей', color: 'gold' };
   }
   if (order.status === 'SEARCHING' && !offers.length) {
-    return { kind: 'stuck', label: 'Поиск не запускался / нет данных', className: 'bg-slate-100 text-slate-800' };
+    return { kind: 'stuck', label: 'Поиск не запускался / нет данных', color: 'default' };
   }
-  return { kind: 'unknown', label: 'Нет данных', className: 'bg-slate-100 text-slate-800' };
+  return { kind: 'unknown', label: 'Нет данных', color: 'default' };
+}
+
+function statusColor(status: string) {
+  if (status === 'COMPLETED') return 'green';
+  if (status === 'CANCELED') return 'red';
+  if (status === 'SEARCHING') return 'blue';
+  return 'gold';
+}
+
+function offerColor(status: string) {
+  if (status === 'ACCEPTED') return 'green';
+  if (status === 'REJECTED') return 'red';
+  if (status === 'EXPIRED') return 'orange';
+  if (status === 'PENDING') return 'blue';
+  return 'default';
 }
 
 function formatPerson(user?: { firstName?: string; lastName?: string } | null) {

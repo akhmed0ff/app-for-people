@@ -1,6 +1,9 @@
 'use client';
 
+import { CarOutlined, DollarOutlined, FieldTimeOutlined, SearchOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
+import { Col, List, Row, Skeleton, Space, Tag, Typography } from 'antd';
+import { AntCard } from '../shared/components/AntCard';
 import { fetchDashboard, fetchDrivers, fetchOrders, fetchPayments } from '../shared/api/admin-api';
 import { MetricCard } from '../shared/components/MetricCard';
 import { PageHeader } from '../shared/components/PageHeader';
@@ -45,49 +48,96 @@ export default function DashboardPage() {
         description="Live operational overview for dispatch, revenue, and fleet health."
         title="Dashboard"
       />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Users" value={dashboard.data?.users ?? 0} />
-        <MetricCard label="Active drivers" value={activeDrivers} />
-        <MetricCard label="Open orders" value={openOrders} />
-        <MetricCard label="Revenue" value={formatMoney(revenue)} />
-      </div>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label="Заказы в поиске" value={searchingOrders} />
-        <MetricCard label="Offers pending" value={pendingOffers} />
-        <MetricCard label="Offers rejected today" value={rejectedToday} />
-        <MetricCard label="Offers expired today" value={expiredToday} />
-        <MetricCard label="Заказы без водителя" value={noDriverOrders} />
-      </div>
-      <div className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <section className="rounded-lg border border-line bg-surface p-4">
-          <h3 className="mb-4 text-lg font-black">Order Monitoring</h3>
-          <div className="space-y-3">
-            {(orders.data ?? []).slice(0, 6).map((order) => (
-              <div className="rounded-lg border border-line p-3" key={order.id}>
-                <div className="flex justify-between gap-3">
-                  <p className="font-black">{order.status}</p>
-                  <span className="text-sm font-bold text-muted">{order.currency}</span>
-                </div>
-                <p className="mt-1 text-sm font-semibold text-muted">{order.pickupAddress}</p>
-                <p className="text-sm font-semibold text-muted">{order.dropoffAddress}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-        <section className="rounded-lg border border-line bg-surface p-4">
-          <h3 className="mb-4 text-lg font-black">Active Drivers Map</h3>
-          <div className="relative h-80 overflow-hidden rounded-lg bg-[#dfe7ea] dark:bg-[#1d2733]">
-            {(drivers.data ?? []).slice(0, 8).map((driver, index) => (
-              <span
-                className="absolute h-3 w-3 rounded-full bg-brand ring-4 ring-brand/20"
-                key={driver.id}
-                style={{ left: `${18 + ((index * 17) % 68)}%`, top: `${20 + ((index * 23) % 58)}%` }}
-                title={driver.vehiclePlate}
+      <Row gutter={[16, 16]}>
+        <Col lg={6} sm={12} xs={24}>
+          <MetricCard label="Users" value={dashboard.data?.users ?? 0} />
+        </Col>
+        <Col lg={6} sm={12} xs={24}>
+          <MetricCard label="Active drivers" value={activeDrivers} />
+        </Col>
+        <Col lg={6} sm={12} xs={24}>
+          <MetricCard label="Open orders" value={openOrders} />
+        </Col>
+        <Col lg={6} sm={12} xs={24}>
+          <MetricCard label="Revenue" value={formatMoney(revenue)} />
+        </Col>
+        <Col lg={5} sm={12} xs={24}>
+          <MetricCard label="Заказы в поиске" value={searchingOrders} />
+        </Col>
+        <Col lg={5} sm={12} xs={24}>
+          <MetricCard label="Offers pending" value={pendingOffers} />
+        </Col>
+        <Col lg={5} sm={12} xs={24}>
+          <MetricCard label="Offers rejected today" value={rejectedToday} />
+        </Col>
+        <Col lg={5} sm={12} xs={24}>
+          <MetricCard label="Offers expired today" value={expiredToday} />
+        </Col>
+        <Col lg={4} sm={12} xs={24}>
+          <MetricCard label="Без водителя" value={noDriverOrders} />
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col lg={14} xs={24}>
+          <AntCard title="Order Monitoring">
+            {orders.isLoading ? (
+              <Skeleton active />
+            ) : (
+              <List
+                dataSource={(orders.data ?? []).slice(0, 6)}
+                renderItem={(order) => (
+                  <List.Item>
+                    <List.Item.Meta
+                      description={
+                        <Space direction="vertical" size={2}>
+                          <Typography.Text type="secondary">{order.pickupAddress}</Typography.Text>
+                          <Typography.Text type="secondary">{order.dropoffAddress}</Typography.Text>
+                        </Space>
+                      }
+                      title={
+                        <Space>
+                          <Tag color={statusColor(order.status)}>{order.status}</Tag>
+                          <Typography.Text strong>{order.tariff?.code ?? order.currency}</Typography.Text>
+                        </Space>
+                      }
+                    />
+                  </List.Item>
+                )}
               />
-            ))}
-          </div>
-        </section>
-      </div>
+            )}
+          </AntCard>
+        </Col>
+        <Col lg={10} xs={24}>
+          <AntCard title="Operations Snapshot">
+            <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+              <Snapshot icon={<CarOutlined />} label="Online drivers" value={activeDrivers} />
+              <Snapshot icon={<SearchOutlined />} label="Searching orders" value={searchingOrders} />
+              <Snapshot icon={<FieldTimeOutlined />} label="Pending offers" value={pendingOffers} />
+              <Snapshot icon={<DollarOutlined />} label="Successful revenue" value={formatMoney(revenue)} />
+            </Space>
+          </AntCard>
+        </Col>
+      </Row>
     </>
   );
+}
+
+function Snapshot({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
+  return (
+    <AntCard size="small">
+      <Space>
+        {icon}
+        <Typography.Text type="secondary">{label}</Typography.Text>
+        <Typography.Text strong>{value}</Typography.Text>
+      </Space>
+    </AntCard>
+  );
+}
+
+function statusColor(status: string) {
+  if (status === 'COMPLETED') return 'green';
+  if (status === 'CANCELED') return 'red';
+  if (status === 'SEARCHING') return 'blue';
+  return 'gold';
 }

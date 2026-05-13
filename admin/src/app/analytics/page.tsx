@@ -1,6 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { Col, Row } from 'antd';
+import { AntCard } from '../../shared/components/AntCard';
 import { fetchDrivers, fetchOrders, fetchPayments } from '../../shared/api/admin-api';
 import { MetricCard } from '../../shared/components/MetricCard';
 import { PageHeader } from '../../shared/components/PageHeader';
@@ -22,23 +24,30 @@ export default function AnalyticsPage() {
   return (
     <>
       <PageHeader description="Financial and operational statistics." title="Analytics" />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Gross revenue" value={formatMoney(revenue)} />
-        <MetricCard label="Completed orders" value={completed} />
-        <MetricCard label="Canceled orders" value={canceled} />
-        <MetricCard label="Online drivers" value={onlineDrivers} />
-      </div>
-      <section className="mt-6 rounded-lg border border-line bg-surface p-4">
-        <h3 className="mb-4 text-lg font-black">Revenue Trend</h3>
+      <Row gutter={[16, 16]}>
+        <Col lg={6} sm={12} xs={24}>
+          <MetricCard label="Gross revenue" value={formatMoney(revenue)} />
+        </Col>
+        <Col lg={6} sm={12} xs={24}>
+          <MetricCard label="Completed orders" value={completed} />
+        </Col>
+        <Col lg={6} sm={12} xs={24}>
+          <MetricCard label="Canceled orders" value={canceled} />
+        </Col>
+        <Col lg={6} sm={12} xs={24}>
+          <MetricCard label="Online drivers" value={onlineDrivers} />
+        </Col>
+      </Row>
+      <AntCard style={{ marginTop: 24 }} title="Revenue Trend">
         <div className="flex h-64 items-end gap-3">
           {[44, 68, 52, 80, 61, 92, 74].map((height, index) => (
             <div className="flex flex-1 flex-col items-center gap-2" key={height + index}>
-              <div className="w-full rounded-t-lg bg-brand" style={{ height: `${height}%` }} />
-              <span className="text-xs font-bold text-muted">D{index + 1}</span>
+              <div className="w-full rounded-t-lg bg-teal-600" style={{ height: `${height}%` }} />
+              <span className="text-xs font-bold text-slate-500">D{index + 1}</span>
             </div>
           ))}
         </div>
-      </section>
+      </AntCard>
     </>
   );
 }

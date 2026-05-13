@@ -1,114 +1,111 @@
 'use client';
 
-import clsx from 'clsx';
 import {
-  BarChart3,
-  Car,
-  CreditCard,
-  Gauge,
-  MapPinned,
-  Menu,
-  Settings,
-  Tags,
-  Users,
-  X,
-} from 'lucide-react';
+  BarChartOutlined,
+  CarOutlined,
+  CreditCardOutlined,
+  DashboardOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  SettingOutlined,
+  TagsOutlined,
+  TeamOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
+import { Avatar, Button, Layout, Menu, Space, Typography } from 'antd';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAuth } from '../auth/auth-store';
-import { ThemeToggle } from './ThemeToggle';
+
+const { Header, Content, Sider } = Layout;
 
 const nav = [
-  { href: '/', label: 'Dashboard', icon: Gauge },
-  { href: '/drivers', label: 'Drivers', icon: Car },
-  { href: '/passengers', label: 'Passengers', icon: Users },
-  { href: '/orders', label: 'Orders', icon: MapPinned },
-  { href: '/tariffs', label: 'Tariffs', icon: Tags },
-  { href: '/payments', label: 'Payments', icon: CreditCard },
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/', label: 'Dashboard', icon: <DashboardOutlined /> },
+  { href: '/drivers', label: 'Drivers', icon: <CarOutlined /> },
+  { href: '/passengers', label: 'Passengers', icon: <TeamOutlined /> },
+  { href: '/orders', label: 'Orders', icon: <UserOutlined /> },
+  { href: '/tariffs', label: 'Tariffs', icon: <TagsOutlined /> },
+  { href: '/payments', label: 'Payments', icon: <CreditCardOutlined /> },
+  { href: '/analytics', label: 'Analytics', icon: <BarChartOutlined /> },
+  { href: '/settings', label: 'Settings', icon: <SettingOutlined /> },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const auth = useAuth();
+
+  const selectedKeys = useMemo(() => {
+    const match = nav.find((item) => item.href === pathname);
+    return [match?.href ?? '/'];
+  }, [pathname]);
 
   if (pathname === '/login') {
     return <>{children}</>;
   }
 
   return (
-    <div className="min-h-screen text-text">
-      <aside
-        className={clsx(
-          'fixed inset-y-0 left-0 z-40 w-72 border-r border-line bg-surface p-4 transition-transform lg:translate-x-0',
-          open ? 'translate-x-0' : '-translate-x-full',
-        )}
+    <Layout className="admin-shell">
+      <Sider
+        breakpoint="lg"
+        collapsed={collapsed}
+        collapsedWidth={72}
+        collapsible
+        onCollapse={setCollapsed}
+        theme="light"
+        trigger={null}
+        width={260}
       >
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <p className="text-sm font-black uppercase text-brand">Taxi Admin</p>
-            <h1 className="text-xl font-black">Operations</h1>
-          </div>
-          <button className="lg:hidden" onClick={() => setOpen(false)} type="button">
-            <X size={22} />
-          </button>
+        <div className="admin-brand">
+          <Avatar shape="square" size={40} style={{ backgroundColor: '#0f766e', fontWeight: 900 }}>
+            TX
+          </Avatar>
+          {!collapsed ? (
+            <div>
+              <Typography.Text strong>Taxi Admin</Typography.Text>
+              <Typography.Text className="admin-brand-subtitle">Operations</Typography.Text>
+            </div>
+          ) : null}
         </div>
-        <nav className="space-y-1">
-          {nav.map((item) => {
-            const active = pathname === item.href;
-            const Icon = item.icon;
-            return (
-              <Link
-                className={clsx(
-                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold',
-                  active ? 'bg-brand text-white' : 'text-muted hover:bg-black/5 dark:hover:bg-white/10',
-                )}
-                href={item.href}
-                key={item.href}
-                onClick={() => setOpen(false)}
-              >
-                <Icon size={18} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
+        <Menu
+          items={nav.map((item) => ({
+            key: item.href,
+            icon: item.icon,
+            label: <Link href={item.href}>{item.label}</Link>,
+          }))}
+          mode="inline"
+          selectedKeys={selectedKeys}
+        />
+      </Sider>
 
-      <div className="lg:pl-72">
-        <header className="sticky top-0 z-30 border-b border-line bg-white/85 px-4 py-3 backdrop-blur dark:bg-[#0f141b]/85">
-          <div className="flex items-center justify-between gap-3">
-            <button
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-surface lg:hidden"
-              onClick={() => setOpen(true)}
-              type="button"
+      <Layout>
+        <Header className="admin-header">
+          <Space>
+            <Button
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed((value) => !value)}
+              type="text"
+            />
+            <div>
+              <Typography.Text strong>Realtime operations console</Typography.Text>
+              <Typography.Text className="admin-header-subtitle">Dispatch, fleet, matching and pricing</Typography.Text>
+            </div>
+          </Space>
+          <Space>
+            <Button
+              onClick={() => {
+                auth.logout();
+                router.replace('/login');
+              }}
             >
-              <Menu size={20} />
-            </button>
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-muted">Realtime operations console</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <button
-                className="rounded-lg border border-line bg-surface px-3 py-2 text-sm font-bold"
-                onClick={() => {
-                  auth.logout();
-                  router.replace('/login');
-                }}
-                type="button"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </header>
-        <main className="mx-auto max-w-7xl p-4 sm:p-6">{children}</main>
-      </div>
-    </div>
+              Logout
+            </Button>
+          </Space>
+        </Header>
+        <Content className="admin-content">{children}</Content>
+      </Layout>
+    </Layout>
   );
 }

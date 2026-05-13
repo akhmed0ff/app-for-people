@@ -1,19 +1,20 @@
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
 import { useQuery } from '@tanstack/react-query';
+import { Table, Tag } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { fetchPassengers } from '../../shared/api/admin-api';
 import { Passenger } from '../../shared/api/types';
-import { DataTable } from '../../shared/components/DataTable';
 import { PageHeader } from '../../shared/components/PageHeader';
 import { formatDate } from '../../shared/utils/format';
 
-const columns: ColumnDef<Passenger>[] = [
-  { accessorFn: (row) => `${row.user.firstName} ${row.user.lastName}`, header: 'Passenger' },
-  { accessorFn: (row) => row.user.phone ?? '-', header: 'Phone' },
-  { accessorFn: (row) => row.user.email, header: 'Email' },
-  { accessorKey: 'rating', header: 'Rating' },
-  { accessorFn: (row) => formatDate(row.createdAt), header: 'Joined' },
+const columns: ColumnsType<Passenger> = [
+  { title: 'Passenger', render: (_, row) => `${row.user.firstName} ${row.user.lastName}` },
+  { title: 'Phone', render: (_, row) => row.user.phone ?? '-' },
+  { title: 'Email', render: (_, row) => row.user.email },
+  { title: 'Rating', dataIndex: 'rating' },
+  { title: 'Status', render: (_, row) => <Tag color={row.user.status === 'ACTIVE' ? 'green' : 'red'}>{row.user.status}</Tag> },
+  { title: 'Joined', dataIndex: 'createdAt', render: (value: string) => formatDate(value) },
 ];
 
 export default function PassengersPage() {
@@ -22,7 +23,14 @@ export default function PassengersPage() {
   return (
     <>
       <PageHeader description="Passenger accounts, contact data, and activity." title="Passengers" />
-      <DataTable columns={columns} data={passengers.data ?? []} searchPlaceholder="Search passengers" />
+      <Table
+        columns={columns}
+        dataSource={passengers.data ?? []}
+        loading={passengers.isLoading}
+        pagination={{ pageSize: 10, showSizeChanger: true }}
+        rowKey="id"
+        scroll={{ x: 900 }}
+      />
     </>
   );
 }

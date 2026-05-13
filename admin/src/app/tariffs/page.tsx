@@ -1,11 +1,13 @@
 'use client';
 
+import { EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
+import { Button, Form, Input, InputNumber, Space, Table, Tag, message } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import { AntCard } from '../../shared/components/AntCard';
 import { useState } from 'react';
 import { createTariff, fetchTariffs, updateTariff } from '../../shared/api/admin-api';
 import { Tariff } from '../../shared/api/types';
-import { DataTable } from '../../shared/components/DataTable';
 import { PageHeader } from '../../shared/components/PageHeader';
 import { formatMoney } from '../../shared/utils/format';
 
@@ -22,104 +24,140 @@ const emptyForm = {
   currency: 'UZS',
 };
 
+type TariffForm = typeof emptyForm;
+
 export default function TariffsPage() {
+  const [messageApi, contextHolder] = message.useMessage();
+  const [form] = Form.useForm<TariffForm>();
   const queryClient = useQueryClient();
   const tariffs = useQuery({ queryKey: ['tariffs'], queryFn: fetchTariffs });
   const [editing, setEditing] = useState<Tariff | null>(null);
-  const [form, setForm] = useState(emptyForm);
 
   const save = useMutation({
-    mutationFn: () =>
-      editing ? updateTariff(editing.id, form) : createTariff(form),
+    mutationFn: (values: TariffForm) => (editing ? updateTariff(editing.id, values) : createTariff(values)),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['tariffs'] });
       setEditing(null);
-      setForm(emptyForm);
+      form.resetFields();
+      messageApi.success('Тариф сохранен');
     },
+    onError: () => messageApi.error('Не удалось сохранить тариф'),
   });
 
-  const columns: ColumnDef<Tariff>[] = [
-    { accessorKey: 'name', header: 'Name' },
-    { accessorKey: 'code', header: 'Code' },
-    { cell: ({ row }) => formatMoney(row.original.carSupplyPrice), header: 'Supply' },
-    { cell: ({ row }) => formatMoney(row.original.pricePerKm), header: 'Per km' },
-    { accessorKey: 'freeWaitingMinutes', header: 'Free wait' },
-    { cell: ({ row }) => formatMoney(row.original.waitingPricePerMinute), header: 'Wait/min' },
+  const columns: ColumnsType<Tariff> = [
+    { title: 'Name', dataIndex: 'name' },
     {
-      header: 'Actions',
-      cell: ({ row }) => (
-        <button
-          className="rounded-lg border border-line px-3 py-2 text-sm font-black"
+      title: 'Code',
+      dataIndex: 'code',
+      render: (code: string) => <Tag color="blue">{code}</Tag>,
+    },
+    { title: 'Supply', dataIndex: 'carSupplyPrice', render: (value: number) => formatMoney(value) },
+    { title: 'Per km', dataIndex: 'pricePerKm', render: (value: number) => formatMoney(value) },
+    { title: 'Free wait', dataIndex: 'freeWaitingMinutes', render: (value: number) => `${value} min` },
+    { title: 'Wait/min', dataIndex: 'waitingPricePerMinute', render: (value: number) => formatMoney(value) },
+    {
+      title: 'Status',
+      dataIndex: 'isActive',
+      render: (active: boolean) => <Tag color={active ? 'green' : 'red'}>{active ? 'Active' : 'Inactive'}</Tag>,
+    },
+    {
+      title: 'Actions',
+      render: (_, tariff) => (
+        <Button
+          icon={<EditOutlined />}
           onClick={() => {
-            setEditing(row.original);
-            setForm({
-              code: row.original.code,
-              name: row.original.name,
-              description: row.original.description ?? '',
-              carSupplyPrice: row.original.carSupplyPrice,
-              pricePerKm: row.original.pricePerKm,
-              freeWaitingMinutes: row.original.freeWaitingMinutes,
-              waitingPricePerMinute: row.original.waitingPricePerMinute,
-              stopPrice: row.original.stopPrice,
-              minimumOrderPrice: row.original.minimumOrderPrice,
-              currency: row.original.currency,
+            setEditing(tariff);
+            form.setFieldsValue({
+              code: tariff.code,
+              name: tariff.name,
+              description: tariff.description ?? '',
+              carSupplyPrice: tariff.carSupplyPrice,
+              pricePerKm: tariff.pricePerKm,
+              freeWaitingMinutes: tariff.freeWaitingMinutes,
+              waitingPricePerMinute: tariff.waitingPricePerMinute,
+              stopPrice: tariff.stopPrice,
+              minimumOrderPrice: tariff.minimumOrderPrice,
+              currency: tariff.currency,
             });
           }}
-          type="button"
         >
           Edit
-        </button>
+        </Button>
       ),
     },
   ];
 
   return (
     <>
+      {contextHolder}
       <PageHeader description="Create and update pricing plans." title="Tariffs" />
-      <div className="mb-6 rounded-lg border border-line bg-surface p-4">
-        <h3 className="mb-4 text-lg font-black">{editing ? 'Edit tariff' : 'Create tariff'}</h3>
-        <div className="grid gap-3 md:grid-cols-3">
-          {Object.entries(form).map(([key, value]) => (
-            <label className="text-sm font-bold text-muted" key={key}>
-              {key}
-              <input
-                className="mt-1 h-10 w-full rounded-lg border border-line bg-transparent px-3 text-text outline-none"
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    [key]: typeof value === 'number' ? Number(event.target.value) : event.target.value,
-                  }))
-                }
-                type={typeof value === 'number' ? 'number' : 'text'}
-                value={value}
-              />
-            </label>
-          ))}
-        </div>
-        <div className="mt-4 flex gap-2">
-          <button
-            className="rounded-lg bg-brand px-4 py-2 font-black text-white disabled:opacity-50"
-            disabled={save.isPending}
-            onClick={() => save.mutate()}
-            type="button"
-          >
-            Save
-          </button>
-          {editing ? (
-            <button
-              className="rounded-lg border border-line px-4 py-2 font-black"
-              onClick={() => {
-                setEditing(null);
-                setForm(emptyForm);
-              }}
-              type="button"
-            >
-              Cancel
-            </button>
-          ) : null}
-        </div>
-      </div>
-      <DataTable columns={columns} data={tariffs.data ?? []} searchPlaceholder="Search tariffs" />
+      <AntCard
+        style={{ marginBottom: 24 }}
+        title={editing ? `Edit tariff ${editing.code}` : 'Create tariff'}
+      >
+        <Form
+          form={form}
+          initialValues={emptyForm}
+          layout="vertical"
+          onFinish={(values: TariffForm) => save.mutate(values)}
+        >
+          <div className="grid gap-3 md:grid-cols-3">
+            <Form.Item label="Code" name="code" rules={[{ required: true, message: 'Введите код' }]}>
+              <Input disabled={Boolean(editing)} />
+            </Form.Item>
+            <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Введите название' }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item label="Currency" name="currency" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item label="Car supply price" name="carSupplyPrice" rules={[{ required: true }]}>
+              <InputNumber min={0} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item label="Price per km" name="pricePerKm" rules={[{ required: true }]}>
+              <InputNumber min={0} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item label="Free waiting minutes" name="freeWaitingMinutes" rules={[{ required: true }]}>
+              <InputNumber min={0} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item label="Waiting price/min" name="waitingPricePerMinute" rules={[{ required: true }]}>
+              <InputNumber min={0} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item label="Stop price" name="stopPrice" rules={[{ required: true }]}>
+              <InputNumber min={0} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item label="Minimum order price" name="minimumOrderPrice" rules={[{ required: true }]}>
+              <InputNumber min={0} style={{ width: '100%' }} />
+            </Form.Item>
+          </div>
+          <Form.Item label="Description" name="description">
+            <Input.TextArea rows={2} />
+          </Form.Item>
+          <Space>
+            <Button htmlType="submit" icon={<PlusOutlined />} loading={save.isPending} type="primary">
+              Save
+            </Button>
+            {editing ? (
+              <Button
+                onClick={() => {
+                  setEditing(null);
+                  form.resetFields();
+                }}
+              >
+                Cancel
+              </Button>
+            ) : null}
+          </Space>
+        </Form>
+      </AntCard>
+      <Table
+        columns={columns}
+        dataSource={tariffs.data ?? []}
+        loading={tariffs.isLoading}
+        pagination={{ pageSize: 10, showSizeChanger: true }}
+        rowKey="id"
+        scroll={{ x: 1000 }}
+      />
     </>
   );
 }

@@ -1,3 +1,5 @@
+import { Space, Typography } from 'antd';
+
 export function PageHeader({
   title,
   description,
@@ -8,12 +10,14 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="admin-page-header">
       <div>
-        <h2 className="text-2xl font-black tracking-normal sm:text-3xl">{title}</h2>
-        <p className="mt-1 text-sm font-medium text-muted">{description}</p>
+        <Typography.Title level={2} style={{ marginBottom: 4 }}>
+          {title}
+        </Typography.Title>
+        <Typography.Text type="secondary">{description}</Typography.Text>
       </div>
-      {action}
+      {action ? <Space>{action}</Space> : null}
     </div>
   );
 }
