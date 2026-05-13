@@ -1,13 +1,12 @@
-FROM node:22-alpine AS deps
+﻿FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
 COPY admin/package*.json ./admin/
-RUN npm install --workspace admin --include-workspace-root
+RUN npm install --workspace admin --include-workspace-root --legacy-peer-deps
 
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/admin/node_modules ./admin/node_modules
 COPY package*.json ./
 COPY tsconfig.base.json ./
 COPY admin ./admin
