@@ -67,6 +67,7 @@ export type Order = {
   driverId?: string;
   tariffId?: string;
   createdAt: string;
+  updatedAt?: string;
 };
 
 export type DriverLocation = {

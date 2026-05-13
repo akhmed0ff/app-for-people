@@ -1,6 +1,11 @@
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import { useEffect } from 'react';
 import { Platform } from 'react-native';
+import { registerPushToken, unregisterPushToken } from '../../shared/api/driver-api';
+import { useOfferStore } from '../../shared/store/offer.store';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -9,6 +14,14 @@ Notifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
+
+const PUSH_TOKEN_KEY = 'driver.expoPushToken';
+
+type NotificationData = {
+  type?: string;
+  orderId?: string;
+  role?: string;
+};
 
 export async function registerPushNotifications() {
   if (!Device.isDevice) {
@@ -32,5 +45,52 @@ export async function registerPushNotifications() {
     });
   }
 
-  return Notifications.getExpoPushTokenAsync();
+  try {
+    const expoToken = await Notifications.getExpoPushTokenAsync();
+    const token = expoToken.data;
+    await registerPushToken({
+      token,
+      platform: Platform.OS === 'ios' ? 'ios' : 'android',
+    });
+    await SecureStore.setItemAsync(PUSH_TOKEN_KEY, token);
+    return expoToken;
+  } catch {
+    return null;
+  }
+}
+
+export async function unregisterPushNotifications() {
+  const token = await SecureStore.getItemAsync(PUSH_TOKEN_KEY);
+  if (!token) {
+    return;
+  }
+
+  try {
+    await unregisterPushToken(token);
+  } catch {
+    // Logout should not be blocked by a transient push unregister failure.
+  } finally {
+    await SecureStore.deleteItemAsync(PUSH_TOKEN_KEY);
+  }
+}
+
+export function useDriverNotificationResponse() {
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as NotificationData;
+      if (data.role !== 'DRIVER') {
+        return;
+      }
+      if (data.type === 'NEW_ORDER') {
+        router.push('/(tabs)');
+        void useOfferStore.getState().fetchCurrentOffer();
+        return;
+      }
+      if (data.orderId) {
+        router.push(`/trip/${data.orderId}`);
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
 }

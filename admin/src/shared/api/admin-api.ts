@@ -50,3 +50,24 @@ export async function fetchPayments(): Promise<Payment[]> {
   const response = await api.get<ApiResponse<Payment[]>>('/payments');
   return response.data.data;
 }
+
+export async function topUpDriver(driverId: string, input: { amount: number; description?: string }) {
+  const response = await api.post<ApiResponse<{ driver: Driver; transaction: Payment }>>(
+    `/admin/drivers/${driverId}/top-up`,
+    input,
+  );
+  return response.data.data;
+}
+
+export async function adjustDriverBalance(driverId: string, input: { amount: number; description?: string }) {
+  const response = await api.post<ApiResponse<{ driver: Driver; transaction: Payment }>>(
+    `/admin/drivers/${driverId}/adjust`,
+    input,
+  );
+  return response.data.data;
+}
+
+export async function fetchDriverTransactions(driverId: string): Promise<Payment[]> {
+  const response = await api.get<ApiResponse<Payment[]>>(`/admin/drivers/${driverId}/transactions`);
+  return response.data.data;
+}

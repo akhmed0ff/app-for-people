@@ -2,10 +2,15 @@ import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useCustomerNotificationResponse } from '../src/features/notifications/registerPushNotifications';
+import { useCustomerRecovery } from '../src/features/trip/useCustomerRecovery';
 import { useAuthStore } from '../src/shared/store/auth.store';
+import { ConnectionBanner } from '../src/shared/ui/ConnectionBanner';
 
 export default function RootLayout() {
   const { accessToken, hydrated, hydrate } = useAuthStore();
+  useCustomerRecovery();
+  useCustomerNotificationResponse();
 
   useEffect(() => {
     void hydrate();
@@ -29,6 +34,7 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar style="dark" />
+      <ConnectionBanner />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />

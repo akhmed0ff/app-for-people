@@ -1,28 +1,55 @@
+import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
-import { Order, OrderOffer } from '../api/types';
+import { Order } from '../api/types';
+
+const ACTIVE_ORDER_KEY = 'driver.activeOrder';
+const terminalStatuses = new Set(['COMPLETED', 'CANCELED']);
 
 type OrdersState = {
-  queue: OrderOffer[];
   activeOrder: Order | null;
   history: Order[];
-  enqueue: (offer: OrderOffer) => void;
-  removeOffer: (orderId: string) => void;
+  hydrated: boolean;
   setActiveOrder: (order: Order | null) => void;
+  hydrateActiveOrder: () => Promise<void>;
   setHistory: (history: Order[]) => void;
 };
 
 export const useOrdersStore = create<OrdersState>((set) => ({
-  queue: [],
   activeOrder: null,
   history: [],
-  enqueue: (offer) =>
-    set((state) => ({
-      queue: state.queue.some((item) => item.orderId === offer.orderId)
-        ? state.queue
-        : [...state.queue, offer],
-    })),
-  removeOffer: (orderId) =>
-    set((state) => ({ queue: state.queue.filter((offer) => offer.orderId !== orderId) })),
-  setActiveOrder: (activeOrder) => set({ activeOrder }),
+  hydrated: false,
+  setActiveOrder: (activeOrder) => {
+    if (!activeOrder || terminalStatuses.has(activeOrder.status)) {
+      void SecureStore.deleteItemAsync(ACTIVE_ORDER_KEY);
+      set({ activeOrder: null });
+      return;
+    }
+    void SecureStore.setItemAsync(ACTIVE_ORDER_KEY, JSON.stringify(activeOrder));
+    set((state) => {
+      const current = state.activeOrder;
+      if (
+        current?.id === activeOrder.id &&
+        current.status === activeOrder.status &&
+        current.updatedAt === activeOrder.updatedAt
+      ) {
+        return state;
+      }
+      return { activeOrder };
+    });
+  },
+  hydrateActiveOrder: async () => {
+    const raw = await SecureStore.getItemAsync(ACTIVE_ORDER_KEY);
+    if (!raw) {
+      set({ hydrated: true });
+      return;
+    }
+    try {
+      const activeOrder = JSON.parse(raw) as Order;
+      set({ activeOrder: terminalStatuses.has(activeOrder.status) ? null : activeOrder, hydrated: true });
+    } catch {
+      await SecureStore.deleteItemAsync(ACTIVE_ORDER_KEY);
+      set({ activeOrder: null, hydrated: true });
+    }
+  },
   setHistory: (history) => set({ history }),
 }));

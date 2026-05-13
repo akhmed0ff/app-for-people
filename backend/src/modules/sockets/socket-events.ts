@@ -10,7 +10,15 @@ export const SocketEvent = {
   DriverNearestSearch: 'driver.nearest.search',
   DriverNearestFound: 'driver.nearest.found',
   OrderDispatch: 'order.dispatch',
+  OrderJoin: 'order.join',
   OrderOffered: 'order.offered',
+  OrderMatchingStarted: 'order:matching_started',
+  OrderOfferNew: 'order:offer:new',
+  OrderOfferAccepted: 'order:offer:accepted',
+  OrderOfferRejected: 'order:offer:rejected',
+  OrderOfferExpired: 'order:offer:expired',
+  OrderNoDriversAvailable: 'order:no_drivers_available',
+  OrderOfferCanceled: 'order:offer:canceled',
   OrderAccept: 'order.accept',
   OrderAccepted: 'order.accepted',
   OrderCancel: 'order.cancel',
@@ -90,7 +98,15 @@ export type ServerToClientEvents = {
   [SocketEvent.DriverLocationUpdated]: (payload: DriverLocationPayload & { updatedAt: Date }) => void;
   [SocketEvent.DriverNearestFound]: (payload: Array<{ driverId: string; distanceMeters: number }>) => void;
   [SocketEvent.OrderDispatch]: (payload: unknown) => void;
+  [SocketEvent.OrderJoin]: (payload: unknown) => void;
   [SocketEvent.OrderOffered]: (payload: unknown) => void;
+  [SocketEvent.OrderMatchingStarted]: (payload: unknown) => void;
+  [SocketEvent.OrderOfferNew]: (payload: unknown) => void;
+  [SocketEvent.OrderOfferAccepted]: (payload: unknown) => void;
+  [SocketEvent.OrderOfferRejected]: (payload: unknown) => void;
+  [SocketEvent.OrderOfferExpired]: (payload: unknown) => void;
+  [SocketEvent.OrderNoDriversAvailable]: (payload: unknown) => void;
+  [SocketEvent.OrderOfferCanceled]: (payload: unknown) => void;
   [SocketEvent.OrderAccepted]: (payload: unknown) => void;
   [SocketEvent.OrderCanceled]: (payload: unknown) => void;
   [SocketEvent.OrderStatusUpdated]: (payload: unknown) => void;
@@ -105,6 +121,7 @@ export type ClientToServerEvents = {
   [SocketEvent.DriverLocationUpdate]: (payload: DriverLocationPayload) => void;
   [SocketEvent.DriverNearestSearch]: (payload: NearestDriverPayload) => void;
   [SocketEvent.OrderDispatch]: (payload: DispatchOrderPayload) => void;
+  [SocketEvent.OrderJoin]: (payload: OrderActionPayload) => void;
   [SocketEvent.OrderAccept]: (payload: OrderActionPayload) => void;
   [SocketEvent.OrderCancel]: (payload: OrderActionPayload) => void;
   [SocketEvent.OrderStatusUpdate]: (payload: OrderStatusPayload) => void;

@@ -4,6 +4,7 @@ import {
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -14,6 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import { Server, Socket } from 'socket.io';
 import { Role } from '../../domain/auth/role.enum';
 import { JwtUser } from '../auth/auth.types';
+import { MatchingService } from '../matching/matching.service';
 import { DispatchOrderDto, OrderActionDto, OrderStatusDto } from './dto/socket-order.dto';
 import { SocketLocationDto } from './dto/socket-location.dto';
 import {
@@ -45,7 +47,7 @@ type AuthedSocket = Socket<ClientToServerEvents, ServerToClientEvents> & {
     whitelist: true,
   }),
 )
-export class TaxiGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class TaxiGateway implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit {
   @WebSocketServer()
   server!: Server<ClientToServerEvents, ServerToClientEvents>;
 
@@ -53,7 +55,12 @@ export class TaxiGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly realtime: TaxiRealtimeService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly matchingService: MatchingService,
   ) {}
+
+  afterInit(server: Server<ClientToServerEvents, ServerToClientEvents>) {
+    this.matchingService.setServer(server);
+  }
 
   async handleConnection(client: AuthedSocket) {
     try {
@@ -126,6 +133,12 @@ export class TaxiGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const result = await this.realtime.dispatchOrder(this.server, payload);
     socket.join(Rooms.order(payload.orderId));
     return result;
+  }
+
+  @SubscribeMessage(SocketEvent.OrderJoin)
+  async joinOrder(@ConnectedSocket() socket: AuthedSocket, @MessageBody() payload: OrderActionDto) {
+    this.ensureRole(socket, [Role.ADMIN, Role.PASSENGER, Role.DRIVER]);
+    return this.realtime.joinOrder(socket, payload);
   }
 
   @SubscribeMessage(SocketEvent.OrderAccept)

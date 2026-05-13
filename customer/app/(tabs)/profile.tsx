@@ -1,6 +1,9 @@
 import { router } from 'expo-router';
 import { Alert, StyleSheet, Text } from 'react-native';
-import { registerPushNotifications } from '../../src/features/notifications/registerPushNotifications';
+import {
+  registerPushNotifications,
+  unregisterPushNotifications,
+} from '../../src/features/notifications/registerPushNotifications';
 import { disconnectTaxiSocket } from '../../src/shared/socket/taxi-socket';
 import { useAuthStore } from '../../src/shared/store/auth.store';
 import { Button } from '../../src/shared/ui/Button';
@@ -15,6 +18,7 @@ export default function ProfileScreen() {
   }
 
   async function logout() {
+    await unregisterPushNotifications();
     disconnectTaxiSocket();
     await auth.logout();
     router.replace('/(auth)/phone');

@@ -1,10 +1,16 @@
 import { io, Socket } from 'socket.io-client';
 import { DriverLocation, Order, OrderOffer, OrderStatus } from '../api/types';
 import { env } from '../config/env';
+import { useConnectionStore } from '../store/connection.store';
 
 type ServerToClientEvents = {
   connected: (payload: { heartbeatIntervalMs: number }) => void;
   'order.offered': (payload: OrderOffer) => void;
+  'order:offer:new': (payload: OrderOffer) => void;
+  'order:offer:expired': (payload: { offerId: string; orderId: string }) => void;
+  'order:offer:canceled': (payload: { offerId: string; orderId: string; reason?: string }) => void;
+  'order:offer:accepted': (payload: { offerId: string; orderId: string }) => void;
+  'order:offer:rejected': (payload: { offerId: string; orderId: string }) => void;
   'order.accepted': (payload: Order) => void;
   'order.canceled': (payload: Order) => void;
   'order.status.updated': (payload: Order) => void;
@@ -18,6 +24,7 @@ type ClientToServerEvents = {
   'driver.online': (payload?: DriverLocation) => void;
   'driver.offline': () => void;
   'driver.location.update': (payload: DriverLocation) => void;
+  'order.join': (payload: { orderId: string }) => void;
   'order.accept': (payload: { orderId: string }) => void;
   'order.cancel': (payload: { orderId: string; reason?: string }) => void;
   'order.status.update': (payload: { orderId: string; status: OrderStatus }) => void;
@@ -42,16 +49,20 @@ export function getDriverSocket(token: string) {
     disconnectDriverSocket();
   }
 
+  useConnectionStore.getState().setStatus('connecting');
   socket = io(env.socketUrl, {
     auth: { token },
     transports: ['websocket', 'polling'],
     reconnection: true,
-    reconnectionAttempts: Infinity,
-    reconnectionDelay: 500,
-    reconnectionDelayMax: 5000,
+    reconnectionAttempts: 20,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 8000,
+    timeout: 10000,
   });
 
   socket.on('connected', ({ heartbeatIntervalMs }) => {
+    useConnectionStore.getState().setStatus('connected');
+    useConnectionStore.getState().setError(null);
     if (heartbeatTimer) {
       clearInterval(heartbeatTimer);
     }
@@ -59,7 +70,24 @@ export function getDriverSocket(token: string) {
   });
 
   socket.io.on('reconnect', () => {
+    useConnectionStore.getState().setStatus('connected');
     socket?.emit('heartbeat');
+  });
+
+  socket.io.on('reconnect_attempt', (attempt) => {
+    useConnectionStore.getState().setReconnectAttempt(attempt);
+  });
+
+  socket.on('disconnect', () => {
+    useConnectionStore.getState().setStatus('disconnected');
+  });
+
+  socket.on('connect_error', (error) => {
+    useConnectionStore.getState().setError(error.message);
+  });
+
+  socket.on('error', (error) => {
+    useConnectionStore.getState().setError(error.message);
   });
 
   return socket;
@@ -72,4 +100,5 @@ export function disconnectDriverSocket() {
   }
   socket?.disconnect();
   socket = null;
+  useConnectionStore.getState().setStatus('idle');
 }

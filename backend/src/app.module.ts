@@ -10,12 +10,15 @@ import { RedisModule } from './infrastructure/redis/redis.module';
 import { ResponseInterceptor } from './interfaces/http/interceptors/response.interceptor';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { BalanceModule } from './modules/balance/balance.module';
 import { DriversModule } from './modules/drivers/drivers.module';
 import { LocationModule } from './modules/location/location.module';
+import { MatchingModule } from './modules/matching/matching.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PassengersModule } from './modules/passengers/passengers.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { PricingModule } from './modules/pricing/pricing.module';
+import { PushModule } from './modules/push/push.module';
 import { SocketsModule } from './modules/sockets/sockets.module';
 import { TariffsModule } from './modules/tariffs/tariffs.module';
 import { UsersModule } from './modules/users/users.module';
@@ -48,8 +51,11 @@ import { UsersModule } from './modules/users/users.module';
     TariffsModule,
     PricingModule,
     PaymentsModule,
+    BalanceModule,
+    PushModule,
     AdminModule,
     LocationModule,
+    MatchingModule,
     SocketsModule,
   ],
   providers: [

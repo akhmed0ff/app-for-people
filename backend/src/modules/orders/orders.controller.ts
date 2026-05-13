@@ -23,6 +23,18 @@ export class OrdersController {
     return this.ordersService.findForUser(user);
   }
 
+  @Get('available')
+  @Roles(Role.DRIVER)
+  available(@CurrentUser() user: JwtUser) {
+    return this.ordersService.availableOffers(user);
+  }
+
+  @Get('offers/current')
+  @Roles(Role.DRIVER)
+  currentOffer(@CurrentUser() user: JwtUser) {
+    return this.ordersService.currentOffer(user);
+  }
+
   @Post()
   @Roles(Role.ADMIN, Role.PASSENGER)
   create(@CurrentUser() user: JwtUser, @Body() dto: CreateOrderDto) {
@@ -33,6 +45,24 @@ export class OrdersController {
   @Roles(Role.ADMIN, Role.DRIVER)
   assignDriver(@CurrentUser() user: JwtUser, @Param('id') id: string, @Body() dto: AssignDriverDto) {
     return this.ordersService.assignDriver(user, id, dto);
+  }
+
+  @Post('offers/:offerId/accept')
+  @Roles(Role.DRIVER)
+  acceptOffer(@CurrentUser() user: JwtUser, @Param('offerId') offerId: string) {
+    return this.ordersService.acceptOffer(user, offerId);
+  }
+
+  @Post('offers/:offerId/reject')
+  @Roles(Role.DRIVER)
+  rejectOffer(@CurrentUser() user: JwtUser, @Param('offerId') offerId: string) {
+    return this.ordersService.rejectOffer(user, offerId);
+  }
+
+  @Post(':id/accept')
+  @Roles(Role.DRIVER)
+  acceptOrder(@CurrentUser() user: JwtUser, @Param('id') id: string) {
+    return this.ordersService.acceptOrder(user, id);
   }
 
   @Patch(':id/complete')

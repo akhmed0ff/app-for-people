@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text } from 'react-native';
+import { registerPushNotifications } from '../../src/features/notifications/registerPushNotifications';
 import { loginByPhone } from '../../src/shared/api/customer-api';
 import { useAuthStore } from '../../src/shared/store/auth.store';
 import { Button } from '../../src/shared/ui/Button';
@@ -18,6 +19,7 @@ export default function PhoneAuthScreen() {
       const tokens = await loginByPhone(phone);
       savePhone(phone);
       await setTokens(tokens);
+      void registerPushNotifications();
       router.replace('/(tabs)');
     } catch {
       Alert.alert('Не удалось войти', 'Проверьте backend и DEV_LOGIN_ENABLED=true.');

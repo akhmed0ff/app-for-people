@@ -1,6 +1,9 @@
 import { router } from 'expo-router';
 import { Alert, StyleSheet, Text } from 'react-native';
-import { registerPushNotifications } from '../../src/features/notifications/registerPushNotifications';
+import {
+  registerPushNotifications,
+  unregisterPushNotifications,
+} from '../../src/features/notifications/registerPushNotifications';
 import { stopDriverTracking } from '../../src/features/location/driver-location.service';
 import { disconnectDriverSocket } from '../../src/shared/socket/driver-socket';
 import { useAuthStore } from '../../src/shared/store/auth.store';
@@ -18,6 +21,7 @@ export default function ProfileScreen() {
   }
 
   async function logout() {
+    await unregisterPushNotifications();
     await stopDriverTracking();
     setOnline(false);
     disconnectDriverSocket();

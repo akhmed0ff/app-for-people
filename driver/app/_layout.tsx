@@ -3,14 +3,22 @@ import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useDriverRecovery } from '../src/features/orders/useDriverRecovery';
+import { useDriverNotificationResponse } from '../src/features/notifications/registerPushNotifications';
 import { useAuthStore } from '../src/shared/store/auth.store';
+import { useDriverStore } from '../src/shared/store/driver.store';
+import { ConnectionBanner } from '../src/shared/ui/ConnectionBanner';
 
 export default function RootLayout() {
   const { accessToken, hydrated, hydrate } = useAuthStore();
+  const hydrateDriver = useDriverStore((state) => state.hydrate);
+  useDriverRecovery();
+  useDriverNotificationResponse();
 
   useEffect(() => {
     void hydrate();
-  }, [hydrate]);
+    void hydrateDriver();
+  }, [hydrate, hydrateDriver]);
 
   useEffect(() => {
     if (!hydrated) {
@@ -30,6 +38,7 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar style="dark" />
+      <ConnectionBanner />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />

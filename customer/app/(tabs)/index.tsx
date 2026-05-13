@@ -15,6 +15,7 @@ export default function BookingScreen() {
   const { loadTariffs, calculate, orderTaxi } = useBookingFlow();
   const [tariffs, setTariffs] = useState<Tariff[]>([]);
   const [loading, setLoading] = useState(false);
+  const [tariffsLoading, setTariffsLoading] = useState(false);
 
   useEffect(() => {
     booking.setPickup({
@@ -22,8 +23,19 @@ export default function BookingScreen() {
       latitude: 41.3111,
       longitude: 69.2797,
     });
-    void loadTariffs().then(setTariffs).catch(() => setTariffs([]));
+    void refreshTariffs();
   }, []);
+
+  async function refreshTariffs() {
+    setTariffsLoading(true);
+    try {
+      setTariffs(await loadTariffs());
+    } catch {
+      setTariffs([]);
+    } finally {
+      setTariffsLoading(false);
+    }
+  }
 
   async function selectTariff(tariff: Tariff) {
     booking.setTariff(tariff);
@@ -81,6 +93,14 @@ export default function BookingScreen() {
             tariff={tariff}
           />
         ))}
+        {tariffs.length === 0 ? (
+          <Section>
+            <Text style={styles.empty}>
+              {tariffsLoading ? 'Loading tariffs...' : 'Tariffs are unavailable.'}
+            </Text>
+            <Button label="Retry" onPress={() => void refreshTariffs()} variant="secondary" />
+          </Section>
+        ) : null}
       </View>
 
       {booking.estimate ? (
@@ -120,5 +140,9 @@ const styles = StyleSheet.create({
     color: '#17202a',
     fontSize: 28,
     fontWeight: '900',
+  },
+  empty: {
+    color: '#667085',
+    fontWeight: '700',
   },
 });

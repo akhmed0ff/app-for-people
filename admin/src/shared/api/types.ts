@@ -26,12 +26,9 @@ export type Driver = {
   vehicleMake: string;
   vehicleModel: string;
   rating: string;
+  balance: number;
+  commissionRatePercent: number;
   user: User;
-  balance?: {
-    availableCents: number;
-    pendingCents: number;
-    currency: string;
-  };
 };
 
 export type Passenger = {
@@ -72,8 +69,10 @@ export type Payment = {
   id: string;
   type: string;
   status: string;
+  amount: number;
   amountCents: number;
   currency: string;
   provider?: string;
+  description?: string;
   createdAt: string;
 };

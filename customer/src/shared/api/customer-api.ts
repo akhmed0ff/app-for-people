@@ -56,3 +56,29 @@ export async function fetchOrders(): Promise<Order[]> {
   const response = await api.get<ApiResponse<Order[]>>('/orders');
   return response.data.data;
 }
+
+export async function fetchActiveOrder(): Promise<Order | null> {
+  const orders = await fetchOrders();
+  return (
+    orders.find((order) => !['COMPLETED', 'CANCELED'].includes(order.status)) ?? null
+  );
+}
+
+export async function registerPushToken(input: {
+  token: string;
+  platform: 'ios' | 'android';
+  deviceId?: string;
+}) {
+  const response = await api.post<ApiResponse<{ id: string; token: string; isActive: boolean }>>(
+    '/push/register',
+    input,
+  );
+  return response.data.data;
+}
+
+export async function unregisterPushToken(token: string) {
+  const response = await api.post<ApiResponse<{ token: string; isActive: boolean }>>('/push/unregister', {
+    token,
+  });
+  return response.data.data;
+}

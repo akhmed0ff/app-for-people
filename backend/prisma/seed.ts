@@ -35,7 +35,8 @@ async function main() {
           vehicleModel: 'Prius',
           vehicleColor: 'White',
           vehiclePlate: 'TAXI-001',
-          balance: {
+          balance: 125000,
+          balanceAccount: {
             create: {
               availableCents: 125000,
               pendingCents: 25000,
@@ -186,6 +187,7 @@ async function main() {
       passengerId: passenger.id,
       driverId: driver.id,
       type: TransactionType.PAYMENT,
+      amount: 17400,
       amountCents: 17400,
       currency: 'UZS',
       provider: 'cash',

@@ -7,7 +7,7 @@ export class DriversService {
   constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
-    return this.prisma.driver.findMany({ include: { user: true, balance: true }, orderBy: { createdAt: 'desc' } });
+    return this.prisma.driver.findMany({ include: { user: true }, orderBy: { createdAt: 'desc' } });
   }
 
   create(dto: CreateDriverDto) {

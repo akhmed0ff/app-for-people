@@ -3,12 +3,18 @@ import { OrderStatus } from '@prisma/client';
 import { Role } from '../../domain/auth/role.enum';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { JwtUser } from '../auth/auth.types';
+import { BalanceService } from '../balance/balance.service';
+import { MatchingService } from '../matching/matching.service';
 import { AssignDriverDto } from './dto/assign-driver.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly balanceService: BalanceService,
+    private readonly matchingService: MatchingService,
+  ) {}
 
   findForUser(user: JwtUser) {
     if (user.role === Role.ADMIN) {
@@ -45,7 +51,7 @@ export class OrdersService {
       throw new ConflictException('Passenger is required');
     }
 
-    return this.prisma.order.create({
+    const order = await this.prisma.order.create({
       data: {
         ...dto,
         passengerId,
@@ -58,6 +64,31 @@ export class OrdersService {
       },
       include: this.orderInclude(),
     });
+    void this.matchingService.startMatching(order.id);
+    return order;
+  }
+
+  availableOffers(user: JwtUser) {
+    if (user.role !== Role.DRIVER) {
+      return [];
+    }
+    return this.matchingService.getAvailableOffers(user);
+  }
+
+  currentOffer(user: JwtUser) {
+    return this.matchingService.getCurrentOffer(user);
+  }
+
+  acceptOffer(user: JwtUser, offerId: string) {
+    return this.matchingService.acceptOffer(user, offerId);
+  }
+
+  rejectOffer(user: JwtUser, offerId: string) {
+    return this.matchingService.rejectOffer(user, offerId);
+  }
+
+  acceptOrder(user: JwtUser, orderId: string) {
+    return this.matchingService.acceptOrder(user, orderId);
   }
 
   async assignDriver(user: JwtUser, orderId: string, dto: AssignDriverDto) {
@@ -89,10 +120,7 @@ export class OrdersService {
       await this.ensureAssignedDriver(user, orderId);
     }
 
-    return this.prisma.order.update({
-      where: { id: orderId },
-      data: { status: OrderStatus.COMPLETED, completedAt: new Date() },
-    });
+    return this.balanceService.completeOrderWithCommission(orderId, `Completed by ${user.role}.`);
   }
 
   private async ensureAssignedDriver(user: JwtUser, orderId: string) {

@@ -23,6 +23,7 @@ export class PaymentsService {
     return this.prisma.transaction.create({
       data: {
         orderId: dto.orderId,
+        amount: dto.amountCents,
         amountCents: dto.amountCents,
         type: TransactionType.PAYMENT,
         provider: dto.method.toLowerCase(),

@@ -16,19 +16,22 @@ export type OrderStatus =
   | 'COMPLETED'
   | 'CANCELED';
 
+export type OrderOfferStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELED';
+
 export type OrderOffer = {
+  offerId: string;
   orderId: string;
   pickupAddress: string;
   pickupLat: number | string;
   pickupLng: number | string;
-  dropoffAddress: string;
-  dropoffLat: number | string;
-  dropoffLng: number | string;
-  distanceToPickupMeters?: number;
-  tariff?: {
-    name: string;
-    currency: string;
-  };
+  destinationAddress: string;
+  destinationLat: number | string;
+  destinationLng: number | string;
+  tariffCode?: string;
+  estimatedPrice?: number;
+  distanceToPickupKm?: number;
+  expiresAt: string;
+  status?: OrderOfferStatus;
 };
 
 export type Order = {
@@ -43,6 +46,7 @@ export type Order = {
   fareCents?: number;
   currency: string;
   createdAt: string;
+  updatedAt?: string;
 };
 
 export type DriverLocation = {
@@ -53,8 +57,18 @@ export type DriverLocation = {
 };
 
 export type DriverBalance = {
-  availableCents: number;
-  pendingCents: number;
-  lifetimeEarnedCents: number;
+  balance: number;
+  commissionRatePercent: number;
+  lastTransactions: DriverTransaction[];
+};
+
+export type DriverTransaction = {
+  id: string;
+  orderId?: string;
+  amount: number;
+  amountCents: number;
+  type: 'TOP_UP' | 'TRIP_COMMISSION' | 'ADJUSTMENT' | string;
+  description?: string;
   currency: string;
+  createdAt: string;
 };

@@ -34,12 +34,23 @@ enum OrderStatus {
   CANCELED
 }
 
+enum OrderOfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELED
+}
+
 enum TransactionType {
   PAYMENT
   DRIVER_PAYOUT
   REFUND
   BONUS
   COMMISSION
+  TOP_UP
+  TRIP_COMMISSION
+  ADJUSTMENT
 }
 
 enum TransactionStatus {
@@ -68,6 +79,7 @@ model User {
   driver        Driver?
   passenger     Passenger?
   refreshTokens RefreshToken[]
+  pushTokens     PushToken[]
   transactions  Transaction[]
 
   @@index([role, status])
@@ -86,12 +98,15 @@ model Driver {
   vehiclePlate  String           @unique
   status        DriverStatus     @default(OFFLINE)
   rating        Decimal          @default(5.0) @db.Decimal(2, 1)
+  balance       Int              @default(0)
+  commissionRatePercent Int      @default(10)
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
-  balance       DriverBalance?
+  balanceAccount DriverBalance?
   locations     DriverLocation[]
   orders        Order[]
   transactions  Transaction[]
+  offers        OrderOffer[]
 
   @@index([status])
   @@index([vehiclePlate])
@@ -151,6 +166,7 @@ model Order {
   paymentMethod   PaymentMethod   @default(CASH)
   requestedAt     DateTime        @default(now())
   assignedAt      DateTime?
+  acceptedAt      DateTime?
   arrivedAt       DateTime?
   startedAt       DateTime?
   completedAt     DateTime?
@@ -159,12 +175,33 @@ model Order {
   updatedAt       DateTime        @updatedAt
   transactions    Transaction[]
   history         OrderHistory[]
+  offers          OrderOffer[]
 
   @@index([status, requestedAt])
   @@index([passengerId, createdAt])
   @@index([driverId, createdAt])
   @@index([pickupLat, pickupLng])
   @@index([dropoffLat, dropoffLng])
+}
+
+model OrderOffer {
+  id          String           @id @default(uuid())
+  orderId     String
+  order       Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  driverId    String
+  driver      Driver           @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  status      OrderOfferStatus @default(PENDING)
+  offeredAt   DateTime         @default(now())
+  expiresAt   DateTime
+  respondedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([orderId, driverId])
+  @@index([orderId])
+  @@index([driverId])
+  @@index([status])
+  @@index([expiresAt])
 }
 
 model Transaction {
@@ -179,8 +216,10 @@ model Transaction {
   passenger   Passenger?        @relation(fields: [passengerId], references: [id], onDelete: SetNull)
   type        TransactionType
   status      TransactionStatus @default(PENDING)
+  amount      Int               @default(0)
   amountCents Int
   currency    String            @default("UZS")
+  description String?
   provider    String?
   providerRef String?
   createdAt   DateTime          @default(now())
@@ -235,6 +274,21 @@ model RefreshToken {
 
   @@index([userId, expiresAt])
   @@index([tokenHash])
+}
+
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String
+  deviceId  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isActive])
 }
 
 model OrderHistory {

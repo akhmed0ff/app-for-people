@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text } from 'react-native';
+import { registerPushNotifications } from '../../src/features/notifications/registerPushNotifications';
 import { loginDriver } from '../../src/shared/api/driver-api';
 import { useAuthStore } from '../../src/shared/store/auth.store';
 import { Button } from '../../src/shared/ui/Button';
@@ -18,6 +19,7 @@ export default function LoginScreen() {
       const tokens = await loginDriver(phone);
       auth.setPhone(phone);
       await auth.setTokens(tokens);
+      void registerPushNotifications();
       router.replace('/(tabs)');
     } catch {
       Alert.alert('Вход не выполнен', 'Проверьте backend и DEV_LOGIN_ENABLED=true.');
