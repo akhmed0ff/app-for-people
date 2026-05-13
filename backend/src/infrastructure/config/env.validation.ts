@@ -9,6 +9,7 @@ const required = [
 
 export function validateEnv(env: Env) {
   const nodeEnv = env.NODE_ENV ?? 'development';
+  const devLoginEnabled = env.DEV_LOGIN_ENABLED === 'true' || env.ENABLE_DEV_LOGIN === 'true';
   const productionRequired = nodeEnv === 'production' ? ['MAPBOX_ACCESS_TOKEN'] : [];
   const missing = [...required, ...productionRequired].filter((key) => !env[key]);
 
@@ -35,6 +36,7 @@ export function validateEnv(env: Env) {
     LOG_LEVEL: env.LOG_LEVEL ?? 'info',
     JWT_ACCESS_EXPIRES_IN: env.JWT_ACCESS_EXPIRES_IN ?? '15m',
     JWT_REFRESH_EXPIRES_IN: env.JWT_REFRESH_EXPIRES_IN ?? '30d',
-    DEV_LOGIN_ENABLED: env.DEV_LOGIN_ENABLED ?? 'false',
+    DEV_LOGIN_ENABLED: String(devLoginEnabled),
+    ENABLE_DEV_LOGIN: String(devLoginEnabled),
   };
 }

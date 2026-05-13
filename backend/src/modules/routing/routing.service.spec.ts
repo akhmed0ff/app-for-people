@@ -4,10 +4,10 @@ import { PricingService } from '../pricing/pricing.service';
 import { RoutingService } from './routing.service';
 
 const routeDto = {
-  pickupLat: 41.311081,
-  pickupLng: 69.240562,
-  destinationLat: 41.299496,
-  destinationLng: 69.240073,
+  pickupLat: 41.0198,
+  pickupLng: 70.1284,
+  destinationLat: 41.0125,
+  destinationLng: 70.1393,
   tariffCode: 'ECONOMY',
 };
 

@@ -19,7 +19,10 @@ async function bootstrap() {
   app.enableVersioning({ type: VersioningType.URI });
 
   app.enableCors({
-    origin: config.get<string[]>('CORS_ORIGINS'),
+    origin: (config.get<string>('CORS_ORIGINS') ?? '')
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean),
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
   });

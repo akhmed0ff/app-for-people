@@ -14,5 +14,6 @@ export const appConfig = () => ({
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
   JWT_ACCESS_EXPIRES_IN: process.env.JWT_ACCESS_EXPIRES_IN ?? '15m',
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN ?? '30d',
-  DEV_LOGIN_ENABLED: process.env.DEV_LOGIN_ENABLED === 'true',
+  DEV_LOGIN_ENABLED:
+    process.env.DEV_LOGIN_ENABLED === 'true' || process.env.ENABLE_DEV_LOGIN === 'true',
 });

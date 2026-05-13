@@ -13,12 +13,12 @@ const baseOrder = {
   driverId: null,
   tariffId: 'tariff-1',
   status: OrderStatus.SEARCHING,
-  pickupAddress: 'Pickup',
-  pickupLat: 41.311081,
-  pickupLng: 69.240562,
-  dropoffAddress: 'Destination',
-  dropoffLat: 41.299496,
-  dropoffLng: 69.240073,
+  pickupAddress: '5-й микрорайон, Ангрен',
+  pickupLat: 41.0198,
+  pickupLng: 70.1284,
+  dropoffAddress: 'Базар Ангрен',
+  dropoffLat: 41.0125,
+  dropoffLng: 70.1393,
   distanceMeters: 5000,
   durationSeconds: null,
   fareCents: 17400,
@@ -73,8 +73,8 @@ describe('MatchingService candidates', () => {
 
   it('finds nearest online driver', async () => {
     prisma.driver.findMany.mockResolvedValue([
-      makeDriver('far', 41.33, 69.24),
-      makeDriver('near', 41.312, 69.2406),
+      makeDriver('far', 41.033, 70.18),
+      makeDriver('near', 41.0205, 70.129),
     ]);
 
     await expect(service.findNearestCandidate(baseOrder as never)).resolves.toEqual(
@@ -83,14 +83,14 @@ describe('MatchingService candidates', () => {
   });
 
   it.each([
-    ['offline driver', makeDriver('offline', 41.312, 69.2406, { status: DriverStatus.OFFLINE })],
-    ['busy driver', makeDriver('busy', 41.312, 69.2406, { status: DriverStatus.BUSY })],
-    ['blocked driver', makeDriver('blocked', 41.312, 69.2406, { userStatus: UserStatus.SUSPENDED })],
-    ['driver without location', makeDriver('no-location', 41.312, 69.2406, { withoutLocation: true })],
-    ['driver outside radius', makeDriver('outside', 42.1, 69.2406)],
-    ['driver who already received offer', makeDriver('already-offered', 41.312, 69.2406, { receivedOffer: true })],
-    ['driver with another pending offer', makeDriver('pending', 41.312, 69.2406, { pendingOffer: true })],
-    ['driver with active order', makeDriver('active-order', 41.312, 69.2406, { activeOrder: true })],
+    ['offline driver', makeDriver('offline', 41.0205, 70.129, { status: DriverStatus.OFFLINE })],
+    ['busy driver', makeDriver('busy', 41.0205, 70.129, { status: DriverStatus.BUSY })],
+    ['blocked driver', makeDriver('blocked', 41.0205, 70.129, { userStatus: UserStatus.SUSPENDED })],
+    ['driver without location', makeDriver('no-location', 41.0205, 70.129, { withoutLocation: true })],
+    ['driver outside radius', makeDriver('outside', 41.12, 70.35)],
+    ['driver who already received offer', makeDriver('already-offered', 41.0205, 70.129, { receivedOffer: true })],
+    ['driver with another pending offer', makeDriver('pending', 41.0205, 70.129, { pendingOffer: true })],
+    ['driver with active order', makeDriver('active-order', 41.0205, 70.129, { activeOrder: true })],
   ])('ignores %s', async (_name, driver) => {
     prisma.driver.findMany.mockResolvedValue([driver]);
 
@@ -99,7 +99,7 @@ describe('MatchingService candidates', () => {
 
   it('creates pending offer on start matching', async () => {
     prisma.order.findUnique.mockResolvedValue(baseOrder);
-    prisma.driver.findMany.mockResolvedValue([makeDriver('driver-1', 41.312, 69.2406)]);
+    prisma.driver.findMany.mockResolvedValue([makeDriver('driver-1', 41.0205, 70.129)]);
     prisma.orderOffer.create.mockResolvedValue({
       id: 'offer-1',
       orderId: 'order-1',

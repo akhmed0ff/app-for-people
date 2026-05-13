@@ -3,6 +3,12 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+const ANGREN = {
+  center: { lat: 41.0167, lng: 70.1436 },
+  fifthMicrodistrict: { address: '5-й микрорайон, Ангрен', lat: 41.0198, lng: 70.1284 },
+  bazar: { address: 'Базар Ангрен', lat: 41.0125, lng: 70.1393 },
+};
+
 async function main() {
   const passwordHash = await bcrypt.hash('Password123!', 10);
 
@@ -12,8 +18,8 @@ async function main() {
     create: {
       email: 'admin@taxi.local',
       passwordHash,
-      firstName: 'System',
-      lastName: 'Admin',
+      firstName: 'Aziza',
+      lastName: 'Karimova',
       role: Role.ADMIN,
     },
   });
@@ -23,18 +29,18 @@ async function main() {
     update: {},
     create: {
       email: 'driver@taxi.local',
-      phone: '+10000000002',
+      phone: '+998901112233',
       passwordHash,
-      firstName: 'Demo',
-      lastName: 'Driver',
+      firstName: 'Jasur',
+      lastName: 'Tursunov',
       role: Role.DRIVER,
       driver: {
         create: {
-          licenseNumber: 'DRV-0001',
-          vehicleMake: 'Toyota',
-          vehicleModel: 'Prius',
+          licenseNumber: 'ANG-0001',
+          vehicleMake: 'Chevrolet',
+          vehicleModel: 'Cobalt',
           vehicleColor: 'White',
-          vehiclePlate: 'TAXI-001',
+          vehiclePlate: '10 A 123 AA',
           balance: 125000,
           balanceAccount: {
             create: {
@@ -54,10 +60,10 @@ async function main() {
     update: {},
     create: {
       email: 'passenger@taxi.local',
-      phone: '+10000000003',
+      phone: '+998902224455',
       passwordHash,
-      firstName: 'Demo',
-      lastName: 'Passenger',
+      firstName: 'Dilshod',
+      lastName: 'Rahimov',
       role: Role.PASSENGER,
       passenger: {
         create: {},
@@ -69,9 +75,9 @@ async function main() {
     {
       code: 'ECONOMY',
       name: 'Эконом',
-      description: 'Базовый тариф для ежедневных поездок.',
-      carSupplyPrice: 8000,
-      pricePerKm: 2000,
+      description: 'Базовый тариф для коротких городских поездок по Ангрену.',
+      carSupplyPrice: 6000,
+      pricePerKm: 1800,
       freeWaitingMinutes: 3,
       waitingPricePerMinute: 500,
       stopPrice: 1000,
@@ -80,31 +86,31 @@ async function main() {
     {
       code: 'COMFORT',
       name: 'Комфорт',
-      description: 'Более просторные машины и выше рейтинг водителей.',
-      carSupplyPrice: 12000,
-      pricePerKm: 3000,
+      description: 'Комфортные поездки между микрорайонами, вокзалом и центром Ангрена.',
+      carSupplyPrice: 9000,
+      pricePerKm: 2500,
       freeWaitingMinutes: 5,
-      waitingPricePerMinute: 1000,
-      stopPrice: 2000,
-      minimumOrderPrice: 12000,
+      waitingPricePerMinute: 800,
+      stopPrice: 1500,
+      minimumOrderPrice: 11000,
     },
     {
       code: 'PREMIUM',
       name: 'Премиум',
-      description: 'Премиальные автомобили для важных поездок.',
-      carSupplyPrice: 25000,
-      pricePerKm: 5000,
+      description: 'Премиальные поездки в промзону, на угольный разрез и ночные поездки.',
+      carSupplyPrice: 18000,
+      pricePerKm: 4000,
       freeWaitingMinutes: 10,
-      waitingPricePerMinute: 2000,
-      stopPrice: 5000,
-      minimumOrderPrice: 25000,
+      waitingPricePerMinute: 1500,
+      stopPrice: 3000,
+      minimumOrderPrice: 22000,
     },
   ];
 
   for (const tariff of tariffs) {
     await prisma.tariff.upsert({
       where: { code: tariff.code },
-      update: tariff,
+      update: { ...tariff, currency: 'UZS' },
       create: {
         ...tariff,
         currency: 'UZS',
@@ -128,8 +134,8 @@ async function main() {
     await prisma.driverLocation.create({
       data: {
         driverId: driver.id,
-        latitude: 41.2995,
-        longitude: 69.2401,
+        latitude: ANGREN.center.lat,
+        longitude: ANGREN.center.lng,
         heading: 90,
         speed: 0,
       },
@@ -150,15 +156,15 @@ async function main() {
       driverId: driver.id,
       tariffId: economy.id,
       status: OrderStatus.DRIVER_ASSIGNED,
-      pickupAddress: 'Amir Temur Square, Tashkent',
-      pickupLat: 41.3111,
-      pickupLng: 69.2797,
-      dropoffAddress: 'Tashkent City Park',
-      dropoffLat: 41.3167,
-      dropoffLng: 69.2486,
-      distanceMeters: 4200,
-      durationSeconds: 780,
-      fareCents: 17400,
+      pickupAddress: ANGREN.fifthMicrodistrict.address,
+      pickupLat: ANGREN.fifthMicrodistrict.lat,
+      pickupLng: ANGREN.fifthMicrodistrict.lng,
+      dropoffAddress: ANGREN.bazar.address,
+      dropoffLat: ANGREN.bazar.lat,
+      dropoffLng: ANGREN.bazar.lng,
+      distanceMeters: 2500,
+      durationSeconds: 480,
+      fareCents: 10500,
       currency: 'UZS',
       paymentMethod: PaymentMethod.CASH,
       assignedAt: new Date(),
@@ -170,12 +176,12 @@ async function main() {
       {
         orderId: order.id,
         status: OrderStatus.SEARCHING,
-        comment: 'Order created by seed.',
+        comment: 'Demo Angren order created by seed.',
       },
       {
         orderId: order.id,
         status: OrderStatus.DRIVER_ASSIGNED,
-        comment: 'Demo driver assigned.',
+        comment: 'Angren demo driver assigned.',
       },
     ],
   });
@@ -187,8 +193,8 @@ async function main() {
       passengerId: passenger.id,
       driverId: driver.id,
       type: TransactionType.PAYMENT,
-      amount: 17400,
-      amountCents: 17400,
+      amount: 10500,
+      amountCents: 10500,
       currency: 'UZS',
       provider: 'cash',
     },

@@ -63,20 +63,20 @@ describe('OrdersService routing integration', () => {
       { sub: 'passenger-user-1', email: 'passenger@test.dev', role: Role.PASSENGER },
       {
         tariffCode: 'ECONOMY',
-        pickupAddress: 'Point A',
-        pickupLat: 41.311081,
-        pickupLng: 69.240562,
-        destinationAddress: 'Point B',
-        destinationLat: 41.299496,
-        destinationLng: 69.240073,
+        pickupAddress: '5-й микрорайон, Ангрен',
+        pickupLat: 41.0198,
+        pickupLng: 70.1284,
+        destinationAddress: 'Базар Ангрен',
+        destinationLat: 41.0125,
+        destinationLng: 70.1393,
       },
     );
 
     expect(routing.estimate).toHaveBeenCalledWith({
-      pickupLat: 41.311081,
-      pickupLng: 69.240562,
-      destinationLat: 41.299496,
-      destinationLng: 69.240073,
+      pickupLat: 41.0198,
+      pickupLng: 70.1284,
+      destinationLat: 41.0125,
+      destinationLng: 70.1393,
       tariffCode: 'ECONOMY',
     });
     expect(prisma.order.create).toHaveBeenCalledWith({
