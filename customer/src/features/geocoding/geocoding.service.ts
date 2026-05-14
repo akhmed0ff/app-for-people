@@ -1,4 +1,5 @@
 import { AddressSuggestion } from '../../shared/api/types';
+import { DEFAULT_CITY } from '../../shared/config/city';
 import { env } from '../../shared/config/env';
 
 type MapboxFeature = {
@@ -14,7 +15,6 @@ type MapboxGeocodingResponse = {
   message?: string;
 };
 
-const TASHKENT_PROXIMITY = '69.2401,41.2995';
 const MAPBOX_GEOCODING_URL = 'https://api.mapbox.com/geocoding/v5/mapbox.places';
 
 export async function searchAddress(query: string): Promise<AddressSuggestion[]> {
@@ -28,9 +28,10 @@ export async function searchAddress(query: string): Promise<AddressSuggestion[]>
 
   const url = new URL(`${MAPBOX_GEOCODING_URL}/${encodeURIComponent(trimmed)}.json`);
   url.searchParams.set('access_token', env.mapboxAccessToken);
-  url.searchParams.set('country', 'uz');
+  url.searchParams.set('country', DEFAULT_CITY.countryCode);
   url.searchParams.set('language', 'ru');
-  url.searchParams.set('proximity', TASHKENT_PROXIMITY);
+  url.searchParams.set('proximity', DEFAULT_CITY.proximity);
+  url.searchParams.set('bbox', '70.05,40.95,70.30,41.08');
   url.searchParams.set('limit', '6');
   url.searchParams.set('types', 'address,poi,place,locality,neighborhood');
 

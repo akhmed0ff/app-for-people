@@ -1,5 +1,16 @@
-import { PropsWithChildren } from 'react';
+import { createElement, PropsWithChildren, ReactElement, ReactNode } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+
+type BoxProps = {
+  children?: ReactNode;
+  contentContainerStyle?: unknown;
+  keyboardShouldPersistTaps?: 'always' | 'never' | 'handled';
+  style?: unknown;
+};
+
+const SafeArea = SafeAreaView as unknown as (props: BoxProps) => ReactElement;
+const Scroll = ScrollView as unknown as (props: BoxProps) => ReactElement;
+const Box = View as unknown as (props: BoxProps) => ReactElement;
 
 type ScreenProps = PropsWithChildren<{
   scroll?: boolean;
@@ -7,20 +18,18 @@ type ScreenProps = PropsWithChildren<{
 
 export function Screen({ children, scroll = true }: ScreenProps) {
   if (!scroll) {
-    return <SafeAreaView style={styles.screen}>{children}</SafeAreaView>;
+    return createElement(SafeArea, { style: styles.screen }, children);
   }
 
-  return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {children}
-      </ScrollView>
-    </SafeAreaView>
+  return createElement(
+    SafeArea,
+    { style: styles.screen },
+    createElement(Scroll, { contentContainerStyle: styles.content, keyboardShouldPersistTaps: 'handled' }, children),
   );
 }
 
 export function Section({ children }: PropsWithChildren) {
-  return <View style={styles.section}>{children}</View>;
+  return createElement(Box, { style: styles.section }, children);
 }
 
 const styles = StyleSheet.create({

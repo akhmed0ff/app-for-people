@@ -1,9 +1,47 @@
+import axios from 'axios';
 import { api } from './client';
 import { ApiResponse, Driver, Order, OrderOffer, Passenger, Payment, Tariff, TokenPair, User } from './types';
 
 export async function loginAdmin(): Promise<TokenPair> {
-  const response = await api.post<ApiResponse<TokenPair>>('/auth/dev-login', { role: 'ADMIN' });
-  return response.data.data;
+  try {
+    if (process.env.NODE_ENV === 'development') {
+      console.info('[admin-auth] dev-login', { baseURL: api.defaults.baseURL, role: 'ADMIN' });
+    }
+    const response = await api.post<ApiResponse<TokenPair>>('/auth/dev-login', { role: 'ADMIN' });
+    return response.data.data;
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development' && axios.isAxiosError(error)) {
+      console.warn('[admin-auth] dev-login failed', {
+        status: error.response?.status,
+        message: error.response?.data?.message ?? error.message,
+      });
+    }
+    throw error;
+  }
+}
+
+export function getAdminLoginErrorMessage(error: unknown) {
+  if (!axios.isAxiosError(error)) {
+    return 'Login failed: unknown error.';
+  }
+
+  if (!error.response) {
+    return `Network error: backend is unavailable at ${api.defaults.baseURL}.`;
+  }
+
+  const status = error.response.status;
+  const backendMessage = formatBackendMessage(error.response.data?.message);
+  if (status === 403) {
+    return `HTTP ${status}: ${backendMessage || 'Dev-login is disabled. Enable DEV_LOGIN_ENABLED=true or ENABLE_DEV_LOGIN=true in backend env.'}`;
+  }
+  if (status === 401) {
+    return `HTTP ${status}: ${backendMessage || 'Seed admin user was not found. Run Prisma seed.'}`;
+  }
+  if (status === 404) {
+    return `HTTP ${status}: ${backendMessage || 'Endpoint /auth/dev-login was not found.'} Check NEXT_PUBLIC_API_URL: ${api.defaults.baseURL}.`;
+  }
+
+  return `HTTP ${status}: ${backendMessage || 'Login failed.'}`;
 }
 
 export async function fetchDashboard() {
@@ -98,4 +136,11 @@ export async function adjustDriverBalance(driverId: string, input: { amount: num
 export async function fetchDriverTransactions(driverId: string): Promise<Payment[]> {
   const response = await api.get<ApiResponse<Payment[]>>(`/admin/drivers/${driverId}/transactions`);
   return response.data.data;
+}
+
+function formatBackendMessage(message: unknown) {
+  if (Array.isArray(message)) {
+    return message.join(', ');
+  }
+  return typeof message === 'string' ? message : '';
 }

@@ -2,6 +2,12 @@
 
 Production-oriented fullstack taxi application scaffold.
 
+## Default City
+
+The MVP is configured around Angren, Uzbekistan. Seed data, demo users, map
+centers, route examples, mock locations, and local tariffs use Angren by
+default.
+
 ## Apps
 
 - `backend`: NestJS, Prisma, PostgreSQL, Redis, Socket.IO

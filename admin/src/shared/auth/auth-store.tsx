@@ -6,6 +6,7 @@ import { TokenPair } from '../api/types';
 type AuthContextValue = {
   accessToken: string | null;
   refreshToken: string | null;
+  hydrated: boolean;
   isAuthenticated: boolean;
   setTokens: (tokens: TokenPair) => void;
   logout: () => void;
@@ -18,16 +19,19 @@ const REFRESH_KEY = 'admin.refreshToken';
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setAccessToken(localStorage.getItem(ACCESS_KEY));
     setRefreshToken(localStorage.getItem(REFRESH_KEY));
+    setHydrated(true);
   }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       accessToken,
       refreshToken,
+      hydrated,
       isAuthenticated: Boolean(accessToken),
       setTokens: (tokens) => {
         localStorage.setItem(ACCESS_KEY, tokens.accessToken);
@@ -42,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setRefreshToken(null);
       },
     }),
-    [accessToken, refreshToken],
+    [accessToken, hydrated, refreshToken],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,10 +1,12 @@
 'use client';
 
 import { Moon, Sun } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 export function ThemeToggle() {
   const [dark, setDark] = useState(false);
+  const t = useTranslations('app');
 
   useEffect(() => {
     const stored = localStorage.getItem('admin.theme');
@@ -22,7 +24,7 @@ export function ThemeToggle() {
 
   return (
     <button
-      aria-label="Toggle dark mode"
+      aria-label={t('themeToggle')}
       className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-surface text-text"
       onClick={toggle}
       type="button"

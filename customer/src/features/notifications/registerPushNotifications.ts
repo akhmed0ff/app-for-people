@@ -9,6 +9,8 @@ import { registerPushToken, unregisterPushToken } from '../../shared/api/custome
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),

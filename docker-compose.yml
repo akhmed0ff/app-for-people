@@ -107,6 +107,7 @@ services:
       - taxi-public
 
   customer:
+    profiles: ["mobile"]
     build:
       context: .
       dockerfile: customer/Dockerfile
@@ -122,16 +123,11 @@ services:
       EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN: ${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN:-replace-with-mapbox-token}
     ports:
       - "${CUSTOMER_PORT:-8081}:8081"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8081 || exit 1"]
-      interval: 20s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
     networks:
       - taxi-public
 
   driver:
+    profiles: ["mobile"]
     build:
       context: .
       dockerfile: driver/Dockerfile
@@ -147,12 +143,6 @@ services:
       EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN: ${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN:-replace-with-mapbox-token}
     ports:
       - "${DRIVER_PORT:-8082}:8082"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8082 || exit 1"]
-      interval: 20s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
     networks:
       - taxi-public
 

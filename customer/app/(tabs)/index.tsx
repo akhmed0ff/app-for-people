@@ -167,7 +167,7 @@ export default function BookingScreen() {
       }
       const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       booking.setPickup({
-        address: 'Моя текущая геолокация',
+        address: 'Моя текущая геолокация в Ангрене',
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       });
@@ -218,7 +218,7 @@ export default function BookingScreen() {
 
   return (
     <Screen>
-      <Text style={styles.title}>Куда едем?</Text>
+      <Text style={styles.title}>Куда едем по Ангрену?</Text>
       {hasActiveTrip ? (
         <Section>
           <Text style={styles.estimate}>У вас активная поездка</Text>
@@ -237,7 +237,7 @@ export default function BookingScreen() {
           label="Откуда"
           onClear={() => booking.setPickup(null)}
           onSelect={(suggestion) => selectAddress('pickup', suggestion)}
-          placeholder="Введите адрес подачи"
+          placeholder="Например: 5-й микрорайон"
           value={booking.pickup?.address ?? ''}
         />
         <Button
@@ -249,7 +249,7 @@ export default function BookingScreen() {
           label="Куда"
           onClear={() => booking.setDropoff(null)}
           onSelect={(suggestion) => selectAddress('dropoff', suggestion)}
-          placeholder="Введите адрес назначения"
+          placeholder="Например: Базар Ангрен"
           value={booking.dropoff?.address ?? ''}
         />
         {booking.pickup && booking.dropoff && !hasRoutePoints ? (

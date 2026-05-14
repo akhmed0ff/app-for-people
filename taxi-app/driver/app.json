@@ -1,9 +1,0 @@
-{
-  "expo": {
-    "name": "Taxi Driver",
-    "slug": "taxi-driver",
-    "version": "0.1.0",
-    "scheme": "taxidriver",
-    "plugins": ["expo-router", "expo-location"]
-  }
-}

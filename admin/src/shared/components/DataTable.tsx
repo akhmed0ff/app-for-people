@@ -9,17 +9,19 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { Search } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export function DataTable<T>({
   data,
   columns,
-  searchPlaceholder = 'Search',
+  searchPlaceholder,
 }: {
   data: T[];
   columns: ColumnDef<T>[];
   searchPlaceholder?: string;
 }) {
+  const t = useTranslations('common');
   const [globalFilter, setGlobalFilter] = useState('');
   const table = useReactTable({
     data,
@@ -38,7 +40,7 @@ export function DataTable<T>({
         <input
           className="h-10 flex-1 bg-transparent text-sm font-semibold outline-none placeholder:text-muted"
           onChange={(event) => setGlobalFilter(event.target.value)}
-          placeholder={searchPlaceholder}
+          placeholder={searchPlaceholder ?? t('search')}
           value={globalFilter}
         />
       </div>
@@ -69,7 +71,7 @@ export function DataTable<T>({
         </table>
       </div>
       <div className="flex items-center justify-between border-t border-line p-3 text-sm font-bold text-muted">
-        <span>{table.getFilteredRowModel().rows.length} rows</span>
+        <span>{t('rows', { count: table.getFilteredRowModel().rows.length })}</span>
         <div className="flex gap-2">
           <button
             className="rounded-lg border border-line px-3 py-2 disabled:opacity-40"
@@ -77,7 +79,7 @@ export function DataTable<T>({
             onClick={() => table.previousPage()}
             type="button"
           >
-            Prev
+            {t('previous')}
           </button>
           <button
             className="rounded-lg border border-line px-3 py-2 disabled:opacity-40"
@@ -85,7 +87,7 @@ export function DataTable<T>({
             onClick={() => table.nextPage()}
             type="button"
           >
-            Next
+            {t('next')}
           </button>
         </div>
       </div>

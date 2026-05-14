@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { DriverLocation, Order } from '../api/types';
+import { DEFAULT_CITY } from '../config/city';
 import { decodePolyline, getOrderDestination, RoutePoint } from '../utils/route';
 
 type RoutePreviewMapProps = {
@@ -87,7 +88,7 @@ function isValidRoutePoint(point: RoutePoint | null): point is RoutePoint {
 }
 
 function getBounds(points: RoutePoint[]) {
-  const fallback = { minLat: 41.29, maxLat: 41.33, minLng: 69.23, maxLng: 69.29 };
+  const fallback = DEFAULT_CITY.bounds;
   if (points.length === 0) {
     return fallback;
   }

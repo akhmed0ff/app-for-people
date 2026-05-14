@@ -1,0 +1,223 @@
+{
+  "app": {
+    "brand": "Taxi Admin",
+    "brandSubtitle": "Operatsiyalar",
+    "headerTitle": "Real vaqt operatsion paneli",
+    "headerSubtitle": "Angren: dispetcherlik, park, matching va tariflar",
+    "logout": "Chiqish",
+    "language": "Til",
+    "themeToggle": "Mavzuni almashtirish",
+    "languages": {
+      "ru": "Русский",
+      "uz": "O'zbekcha"
+    }
+  },
+  "nav": {
+    "dashboard": "Boshqaruv paneli",
+    "drivers": "Haydovchilar",
+    "passengers": "Yo'lovchilar",
+    "orders": "Buyurtmalar",
+    "tariffs": "Tariflar",
+    "payments": "To'lovlar",
+    "analytics": "Analitika",
+    "settings": "Sozlamalar"
+  },
+  "common": {
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "add": "Qo'shish",
+    "delete": "O'chirish",
+    "refresh": "Yangilash",
+    "edit": "Tahrirlash",
+    "loading": "Yuklanmoqda",
+    "error": "Xatolik",
+    "noData": "Ma'lumot yo'q",
+    "actions": "Amallar",
+    "status": "Holat",
+    "created": "Yaratilgan",
+    "description": "Tavsif",
+    "active": "Faol",
+    "inactive": "Nofaol",
+    "rows": "{count} qator",
+    "previous": "Oldingi",
+    "next": "Keyingi",
+    "search": "Qidirish"
+  },
+  "statuses": {
+    "orders": {
+      "SEARCHING": "Haydovchi qidirilmoqda",
+      "DRIVER_ASSIGNED": "Haydovchi biriktirildi",
+      "DRIVER_ARRIVED": "Haydovchi yetib keldi",
+      "IN_PROGRESS": "Yo'lda",
+      "COMPLETED": "Yakunlandi",
+      "CANCELED": "Bekor qilindi"
+    },
+    "offers": {
+      "PENDING": "Javob kutilmoqda",
+      "ACCEPTED": "Qabul qilindi",
+      "REJECTED": "Rad etildi",
+      "EXPIRED": "Muddati tugadi",
+      "CANCELED": "Bekor qilindi"
+    },
+    "drivers": {
+      "ONLINE": "Onlayn",
+      "OFFLINE": "Oflayn",
+      "BUSY": "Band",
+      "BLOCKED": "Bloklangan"
+    },
+    "users": {
+      "ACTIVE": "Faol",
+      "BLOCKED": "Bloklangan",
+      "INACTIVE": "Nofaol"
+    },
+    "payments": {
+      "SUCCESS": "Muvaffaqiyatli",
+      "FAILED": "Xatolik",
+      "CANCELED": "Bekor qilindi",
+      "PENDING": "Kutilmoqda"
+    }
+  },
+  "login": {
+    "eyebrow": "Taxi Admin",
+    "title": "Admin panelga kirish",
+    "description": "Lokal kirish backend admin dev-login endpoint orqali ishlaydi.",
+    "signIn": "Admin sifatida kirish"
+  },
+  "dashboard": {
+    "title": "Boshqaruv paneli",
+    "description": "Angren bo'yicha operatsion ko'rinish: dispetcherlik, tushum va park holati.",
+    "users": "Foydalanuvchilar",
+    "activeDrivers": "Faol haydovchilar",
+    "openOrders": "Ochiq buyurtmalar",
+    "revenue": "Tushum",
+    "searchingOrders": "Qidiruvdagi buyurtmalar",
+    "offersPending": "Kutilayotgan offerlar",
+    "offersRejectedToday": "Bugun rad etilgan offerlar",
+    "offersExpiredToday": "Bugun muddati tugagan offerlar",
+    "ordersWithoutDriver": "Haydovchisiz buyurtmalar",
+    "orderMonitoring": "Buyurtmalar monitoringi",
+    "operationsSnapshot": "Angren operatsion kesimi",
+    "onlineDrivers": "Onlayn haydovchilar",
+    "successfulRevenue": "Muvaffaqiyatli tushum"
+  },
+  "analytics": {
+    "title": "Analitika",
+    "description": "Moliyaviy va operatsion statistika.",
+    "grossRevenue": "Yalpi tushum",
+    "completedOrders": "Yakunlangan buyurtmalar",
+    "canceledOrders": "Bekor qilingan buyurtmalar",
+    "onlineDrivers": "Onlayn haydovchilar",
+    "revenueTrend": "Tushum dinamikasi",
+    "day": "K{day}"
+  },
+  "drivers": {
+    "title": "Haydovchilar",
+    "description": "Park mavjudligini qidirish, filtrlash va monitoring qilish.",
+    "driver": "Haydovchi",
+    "plate": "Davlat raqami",
+    "vehicle": "Avtomobil",
+    "rating": "Reyting",
+    "balance": "Balans",
+    "commission": "Komissiya",
+    "topUp": "To'ldirish",
+    "adjust": "Tuzatish",
+    "topUpTitle": "Haydovchi balansini to'ldirish",
+    "adjustTitle": "Haydovchi balansini tuzatish",
+    "amount": "Summa",
+    "balanceUpdated": "Balans yangilandi",
+    "balanceUpdateFailed": "Balansni yangilab bo'lmadi",
+    "amountRequired": "Summani kiriting",
+    "positiveTopUpRequired": "To'ldirish 0 dan katta bo'lishi kerak"
+  },
+  "passengers": {
+    "title": "Yo'lovchilar",
+    "description": "Yo'lovchi akkauntlari, kontaktlar va faollik.",
+    "passenger": "Yo'lovchi",
+    "phone": "Telefon",
+    "email": "Email",
+    "rating": "Reyting",
+    "joined": "Ro'yxatdan o'tgan sana"
+  },
+  "orders": {
+    "title": "Buyurtmalar",
+    "description": "{count} faol buyurtma kuzatuvda.",
+    "id": "ID",
+    "passenger": "Yo'lovchi",
+    "driver": "Haydovchi",
+    "tariff": "Tarif",
+    "matching": "Matching",
+    "price": "Narx",
+    "route": "Yo'nalish",
+    "allStatuses": "Barcha holatlar",
+    "allMatchingStatuses": "Barcha matching holatlari",
+    "hasPendingOffer": "Pending offer bor",
+    "noDrivers": "Haydovchilar yo'q",
+    "accepted": "Haydovchi biriktirildi",
+    "stuck": "Qidiruvda qolib ketgan",
+    "loadFailed": "Buyurtmalarni yuklab bo'lmadi",
+    "emptyFiltered": "Filtrlar bo'yicha buyurtma yo'q",
+    "orderTitle": "Buyurtma {id}",
+    "pickup": "Olib ketish",
+    "destination": "Manzil",
+    "acceptedAt": "Qabul qilindi",
+    "arrivedAt": "Yetib keldi",
+    "startedAt": "Boshladi",
+    "completedAt": "Yakunlandi",
+    "canceledAt": "Bekor qilindi",
+    "matchingOffers": "Matching offerlar",
+    "offersUnavailable": "Offerlar tarixi hozircha mavjud emas",
+    "offersEmpty": "Bu buyurtma bo'yicha offerlar hali yo'q",
+    "vehicle": "Avtomobil",
+    "offered": "Yuborildi",
+    "expires": "Tugaydi",
+    "responded": "Javob",
+    "toPickup": "Olib ketishgacha",
+    "km": "{value} km",
+    "matchingStatus": {
+      "accepted": "Haydovchi biriktirildi",
+      "pending": "Haydovchi javobi kutilmoqda",
+      "noDrivers": "Mavjud haydovchilar yo'q",
+      "stuck": "Qidiruv boshlanmagan / ma'lumot yo'q",
+      "unknown": "Ma'lumot yo'q"
+    }
+  },
+  "tariffs": {
+    "title": "Tariflar",
+    "description": "Tarif rejalarini yaratish va yangilash.",
+    "createTitle": "Tarif yaratish",
+    "editTitle": "{code} tarifini tahrirlash",
+    "saved": "Tarif saqlandi",
+    "saveFailed": "Tarifni saqlab bo'lmadi",
+    "name": "Nomi",
+    "code": "Kod",
+    "supply": "Yetkazish",
+    "perKm": "Km uchun",
+    "freeWait": "Bepul kutish",
+    "waitPerMinute": "Kutish/min",
+    "currency": "Valyuta",
+    "carSupplyPrice": "Yetkazish narxi",
+    "pricePerKm": "Km narxi",
+    "freeWaitingMinutes": "Bepul kutish daqiqalari",
+    "waitingPricePerMinute": "Kutish narxi/min",
+    "stopPrice": "To'xtash narxi",
+    "minimumOrderPrice": "Minimal narx",
+    "codeRequired": "Kodni kiriting",
+    "nameRequired": "Nomni kiriting",
+    "minutes": "{value} daq"
+  },
+  "payments": {
+    "title": "To'lovlar",
+    "description": "Tranzaksiyalar monitoringi va to'lovlarni solishtirish.",
+    "type": "Tur",
+    "provider": "Provayder",
+    "amount": "Summa"
+  },
+  "settings": {
+    "title": "Sozlamalar",
+    "description": "Operatsion sozlamalar va xavfsizlik parametrlari.",
+    "dispatch": "Dispetcherlik",
+    "security": "Xavfsizlik",
+    "defaultSearchRadius": "Standart qidiruv radiusi",
+    "strongAdminSessions": "Kuchaytirilgan admin sessiyalarni talab qilish"
+  }
+}

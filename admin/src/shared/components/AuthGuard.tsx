@@ -7,13 +7,13 @@ import { useAuth } from '../auth/auth-store';
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated } = useAuth();
+  const { hydrated, isAuthenticated } = useAuth();
 
   useEffect(() => {
-    if (!isAuthenticated && pathname !== '/login') {
+    if (hydrated && !isAuthenticated && pathname !== '/login') {
       router.replace('/login');
     }
-  }, [isAuthenticated, pathname, router]);
+  }, [hydrated, isAuthenticated, pathname, router]);
 
   return children;
 }

@@ -1,9 +1,10 @@
 'use client';
 
-import { PlusOutlined, EditOutlined } from '@ant-design/icons';
+import { EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Form, Input, InputNumber, Modal, Space, Table, Tag, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { adjustDriverBalance, fetchDrivers, topUpDriver } from '../../shared/api/admin-api';
 import { Driver } from '../../shared/api/types';
@@ -27,6 +28,9 @@ export default function DriversPage() {
   const queryClient = useQueryClient();
   const drivers = useQuery({ queryKey: ['drivers'], queryFn: fetchDrivers });
   const [dialog, setDialog] = useState<BalanceDialogState>(null);
+  const t = useTranslations('drivers');
+  const tCommon = useTranslations('common');
+  const tDriverStatus = useTranslations('statuses.drivers');
 
   const balanceMutation = useMutation({
     mutationFn: (input: { driverId: string; action: BalanceAction; amount: number; description?: string }) =>
@@ -36,48 +40,48 @@ export default function DriversPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['drivers'] });
       setDialog(null);
-      messageApi.success('Баланс обновлен');
+      messageApi.success(t('balanceUpdated'));
     },
-    onError: () => messageApi.error('Не удалось обновить баланс'),
+    onError: () => messageApi.error(t('balanceUpdateFailed')),
   });
 
   const columns: ColumnsType<Driver> = [
     {
-      title: 'Driver',
+      title: t('driver'),
       dataIndex: 'user',
       render: (_, driver) => `${driver.user.firstName} ${driver.user.lastName}`,
     },
     {
-      title: 'Status',
+      title: tCommon('status'),
       dataIndex: 'status',
-      render: (status: string) => <Tag color={driverStatusColor(status)}>{status}</Tag>,
+      render: (status: string) => <Tag color={driverStatusColor(status)}>{tDriverStatus(status)}</Tag>,
     },
-    { title: 'Plate', dataIndex: 'vehiclePlate' },
+    { title: t('plate'), dataIndex: 'vehiclePlate' },
     {
-      title: 'Vehicle',
+      title: t('vehicle'),
       render: (_, driver) => `${driver.vehicleMake} ${driver.vehicleModel}`,
     },
-    { title: 'Rating', dataIndex: 'rating' },
+    { title: t('rating'), dataIndex: 'rating' },
     {
-      title: 'Balance',
+      title: t('balance'),
       dataIndex: 'balance',
       render: (balance: number) => formatMoney(balance),
       sorter: (a, b) => a.balance - b.balance,
     },
     {
-      title: 'Commission',
+      title: t('commission'),
       dataIndex: 'commissionRatePercent',
       render: (value: number) => `${value}%`,
     },
     {
-      title: 'Actions',
+      title: tCommon('actions'),
       render: (_, driver) => (
         <Space>
           <Button icon={<PlusOutlined />} onClick={() => setDialog({ driver, action: 'top-up' })}>
-            Top up
+            {t('topUp')}
           </Button>
           <Button icon={<EditOutlined />} onClick={() => setDialog({ driver, action: 'adjust' })}>
-            Adjust
+            {t('adjust')}
           </Button>
         </Space>
       ),
@@ -87,11 +91,12 @@ export default function DriversPage() {
   return (
     <>
       {contextHolder}
-      <PageHeader description="Search, filter, and monitor fleet availability." title="Drivers" />
+      <PageHeader description={t('description')} title={t('title')} />
       <Table
         columns={columns}
         dataSource={drivers.data ?? []}
         loading={drivers.isLoading}
+        locale={{ emptyText: tCommon('noData') }}
         pagination={{ pageSize: 10, showSizeChanger: true }}
         rowKey="id"
         scroll={{ x: 1000 }}
@@ -126,13 +131,17 @@ function BalanceDialog({
   onSubmit: (values: BalanceForm) => void;
 }) {
   const [form] = Form.useForm<BalanceForm>();
+  const t = useTranslations('drivers');
+  const tCommon = useTranslations('common');
   const action = dialog?.action;
-  const title = action === 'top-up' ? 'Top up driver balance' : 'Adjust driver balance';
+  const title = action === 'top-up' ? t('topUpTitle') : t('adjustTitle');
 
   return (
     <Modal
       confirmLoading={loading}
       destroyOnClose
+      okText={tCommon('save')}
+      cancelText={tCommon('cancel')}
       onCancel={onClose}
       onOk={() => form.submit()}
       open={Boolean(dialog)}
@@ -153,21 +162,21 @@ function BalanceDialog({
             onFinish={onSubmit}
           >
             <Form.Item
-              label="Amount"
+              label={t('amount')}
               name="amount"
               rules={[
-                { required: true, message: 'Введите сумму' },
+                { required: true, message: t('amountRequired') },
                 {
                   validator: (_, value: number) =>
                     action === 'top-up' && value <= 0
-                      ? Promise.reject(new Error('Пополнение должно быть больше 0'))
+                      ? Promise.reject(new Error(t('positiveTopUpRequired')))
                       : Promise.resolve(),
                 },
               ]}
             >
               <InputNumber style={{ width: '100%' }} />
             </Form.Item>
-            <Form.Item label="Description" name="description">
+            <Form.Item label={tCommon('description')} name="description">
               <Input.TextArea rows={3} />
             </Form.Item>
           </Form>

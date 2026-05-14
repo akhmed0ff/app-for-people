@@ -3,6 +3,7 @@
 import { CarOutlined, DollarOutlined, FieldTimeOutlined, SearchOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { Col, List, Row, Skeleton, Space, Tag, Typography } from 'antd';
+import { useTranslations } from 'next-intl';
 import { AntCard } from '../shared/components/AntCard';
 import { fetchDashboard, fetchDrivers, fetchOrders, fetchPayments } from '../shared/api/admin-api';
 import { MetricCard } from '../shared/components/MetricCard';
@@ -10,6 +11,9 @@ import { PageHeader } from '../shared/components/PageHeader';
 import { formatMoney } from '../shared/utils/format';
 
 export default function DashboardPage() {
+  const t = useTranslations('dashboard');
+  const tCommon = useTranslations('common');
+  const tOrderStatus = useTranslations('statuses.orders');
   const dashboard = useQuery({ queryKey: ['dashboard'], queryFn: fetchDashboard });
   const drivers = useQuery({ queryKey: ['drivers'], queryFn: fetchDrivers });
   const orders = useQuery({ queryKey: ['orders'], queryFn: fetchOrders, refetchInterval: 10000 });
@@ -22,13 +26,13 @@ export default function DashboardPage() {
   const offers = orders.data?.flatMap((order) => order.offers ?? []) ?? [];
   const hasOffersData = (orders.data ?? []).some((order) => Array.isArray(order.offers));
   const today = new Date().toDateString();
-  const pendingOffers = hasOffersData ? offers.filter((offer) => offer.status === 'PENDING').length : 'Нет данных';
+  const pendingOffers = hasOffersData ? offers.filter((offer) => offer.status === 'PENDING').length : tCommon('noData');
   const rejectedToday = hasOffersData
     ? offers.filter((offer) => offer.status === 'REJECTED' && new Date(offer.updatedAt).toDateString() === today).length
-    : 'Нет данных';
+    : tCommon('noData');
   const expiredToday = hasOffersData
     ? offers.filter((offer) => offer.status === 'EXPIRED' && new Date(offer.updatedAt).toDateString() === today).length
-    : 'Нет данных';
+    : tCommon('noData');
   const noDriverOrders = hasOffersData
     ? (orders.data ?? []).filter(
         (order) =>
@@ -36,7 +40,7 @@ export default function DashboardPage() {
           (order.offers?.length ?? 0) > 0 &&
           order.offers?.every((offer) => ['REJECTED', 'EXPIRED', 'CANCELED'].includes(offer.status)),
       ).length
-    : 'Нет данных';
+    : tCommon('noData');
   const revenue =
     payments.data
       ?.filter((payment) => payment.status === 'SUCCESS')
@@ -44,43 +48,40 @@ export default function DashboardPage() {
 
   return (
     <>
-      <PageHeader
-        description="Live operational overview for dispatch, revenue, and fleet health."
-        title="Dashboard"
-      />
+      <PageHeader description={t('description')} title={t('title')} />
       <Row gutter={[16, 16]}>
         <Col lg={6} sm={12} xs={24}>
-          <MetricCard label="Users" value={dashboard.data?.users ?? 0} />
+          <MetricCard label={t('users')} value={dashboard.data?.users ?? 0} />
         </Col>
         <Col lg={6} sm={12} xs={24}>
-          <MetricCard label="Active drivers" value={activeDrivers} />
+          <MetricCard label={t('activeDrivers')} value={activeDrivers} />
         </Col>
         <Col lg={6} sm={12} xs={24}>
-          <MetricCard label="Open orders" value={openOrders} />
+          <MetricCard label={t('openOrders')} value={openOrders} />
         </Col>
         <Col lg={6} sm={12} xs={24}>
-          <MetricCard label="Revenue" value={formatMoney(revenue)} />
+          <MetricCard label={t('revenue')} value={formatMoney(revenue)} />
         </Col>
         <Col lg={5} sm={12} xs={24}>
-          <MetricCard label="Заказы в поиске" value={searchingOrders} />
+          <MetricCard label={t('searchingOrders')} value={searchingOrders} />
         </Col>
         <Col lg={5} sm={12} xs={24}>
-          <MetricCard label="Offers pending" value={pendingOffers} />
+          <MetricCard label={t('offersPending')} value={pendingOffers} />
         </Col>
         <Col lg={5} sm={12} xs={24}>
-          <MetricCard label="Offers rejected today" value={rejectedToday} />
+          <MetricCard label={t('offersRejectedToday')} value={rejectedToday} />
         </Col>
         <Col lg={5} sm={12} xs={24}>
-          <MetricCard label="Offers expired today" value={expiredToday} />
+          <MetricCard label={t('offersExpiredToday')} value={expiredToday} />
         </Col>
         <Col lg={4} sm={12} xs={24}>
-          <MetricCard label="Без водителя" value={noDriverOrders} />
+          <MetricCard label={t('ordersWithoutDriver')} value={noDriverOrders} />
         </Col>
       </Row>
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col lg={14} xs={24}>
-          <AntCard title="Order Monitoring">
+          <AntCard title={t('orderMonitoring')}>
             {orders.isLoading ? (
               <Skeleton active />
             ) : (
@@ -97,7 +98,7 @@ export default function DashboardPage() {
                       }
                       title={
                         <Space>
-                          <Tag color={statusColor(order.status)}>{order.status}</Tag>
+                          <Tag color={statusColor(order.status)}>{tOrderStatus(order.status)}</Tag>
                           <Typography.Text strong>{order.tariff?.code ?? order.currency}</Typography.Text>
                         </Space>
                       }
@@ -109,12 +110,12 @@ export default function DashboardPage() {
           </AntCard>
         </Col>
         <Col lg={10} xs={24}>
-          <AntCard title="Operations Snapshot">
+          <AntCard title={t('operationsSnapshot')}>
             <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-              <Snapshot icon={<CarOutlined />} label="Online drivers" value={activeDrivers} />
-              <Snapshot icon={<SearchOutlined />} label="Searching orders" value={searchingOrders} />
-              <Snapshot icon={<FieldTimeOutlined />} label="Pending offers" value={pendingOffers} />
-              <Snapshot icon={<DollarOutlined />} label="Successful revenue" value={formatMoney(revenue)} />
+              <Snapshot icon={<CarOutlined />} label={t('onlineDrivers')} value={activeDrivers} />
+              <Snapshot icon={<SearchOutlined />} label={t('searchingOrders')} value={searchingOrders} />
+              <Snapshot icon={<FieldTimeOutlined />} label={t('offersPending')} value={pendingOffers} />
+              <Snapshot icon={<DollarOutlined />} label={t('successfulRevenue')} value={formatMoney(revenue)} />
             </Space>
           </AntCard>
         </Col>

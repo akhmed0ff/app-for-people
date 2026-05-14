@@ -1,0 +1,223 @@
+{
+  "app": {
+    "brand": "Taxi Admin",
+    "brandSubtitle": "Операции",
+    "headerTitle": "Операционная панель в реальном времени",
+    "headerSubtitle": "Ангрен: диспетчеризация, парк, matching и тарифы",
+    "logout": "Выйти",
+    "language": "Язык",
+    "themeToggle": "Переключить тему",
+    "languages": {
+      "ru": "Русский",
+      "uz": "O'zbekcha"
+    }
+  },
+  "nav": {
+    "dashboard": "Панель управления",
+    "drivers": "Водители",
+    "passengers": "Пассажиры",
+    "orders": "Заказы",
+    "tariffs": "Тарифы",
+    "payments": "Платежи",
+    "analytics": "Аналитика",
+    "settings": "Настройки"
+  },
+  "common": {
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "add": "Добавить",
+    "delete": "Удалить",
+    "refresh": "Обновить",
+    "edit": "Редактировать",
+    "loading": "Загрузка",
+    "error": "Ошибка",
+    "noData": "Нет данных",
+    "actions": "Действия",
+    "status": "Статус",
+    "created": "Создано",
+    "description": "Описание",
+    "active": "Активен",
+    "inactive": "Неактивен",
+    "rows": "{count} строк",
+    "previous": "Назад",
+    "next": "Вперед",
+    "search": "Поиск"
+  },
+  "statuses": {
+    "orders": {
+      "SEARCHING": "Поиск водителя",
+      "DRIVER_ASSIGNED": "Водитель назначен",
+      "DRIVER_ARRIVED": "Водитель прибыл",
+      "IN_PROGRESS": "В пути",
+      "COMPLETED": "Завершен",
+      "CANCELED": "Отменен"
+    },
+    "offers": {
+      "PENDING": "Ожидает ответа",
+      "ACCEPTED": "Принят",
+      "REJECTED": "Отклонен",
+      "EXPIRED": "Истек",
+      "CANCELED": "Отменен"
+    },
+    "drivers": {
+      "ONLINE": "Онлайн",
+      "OFFLINE": "Офлайн",
+      "BUSY": "Занят",
+      "BLOCKED": "Заблокирован"
+    },
+    "users": {
+      "ACTIVE": "Активен",
+      "BLOCKED": "Заблокирован",
+      "INACTIVE": "Неактивен"
+    },
+    "payments": {
+      "SUCCESS": "Успешно",
+      "FAILED": "Ошибка",
+      "CANCELED": "Отменен",
+      "PENDING": "Ожидает"
+    }
+  },
+  "login": {
+    "eyebrow": "Taxi Admin",
+    "title": "Вход в админку",
+    "description": "Локальный вход использует backend endpoint admin dev-login.",
+    "signIn": "Войти как администратор"
+  },
+  "dashboard": {
+    "title": "Панель управления",
+    "description": "Операционный обзор Ангрена: диспетчеризация, выручка и состояние парка.",
+    "users": "Пользователи",
+    "activeDrivers": "Активные водители",
+    "openOrders": "Открытые заказы",
+    "revenue": "Выручка",
+    "searchingOrders": "Заказы в поиске",
+    "offersPending": "Offers pending",
+    "offersRejectedToday": "Offers rejected today",
+    "offersExpiredToday": "Offers expired today",
+    "ordersWithoutDriver": "Заказы без водителя",
+    "orderMonitoring": "Мониторинг заказов",
+    "operationsSnapshot": "Операционный срез Ангрена",
+    "onlineDrivers": "Водители онлайн",
+    "successfulRevenue": "Успешная выручка"
+  },
+  "analytics": {
+    "title": "Аналитика",
+    "description": "Финансовая и операционная статистика.",
+    "grossRevenue": "Валовая выручка",
+    "completedOrders": "Завершенные заказы",
+    "canceledOrders": "Отмененные заказы",
+    "onlineDrivers": "Водители онлайн",
+    "revenueTrend": "Динамика выручки",
+    "day": "Д{day}"
+  },
+  "drivers": {
+    "title": "Водители",
+    "description": "Поиск, фильтрация и мониторинг доступности парка.",
+    "driver": "Водитель",
+    "plate": "Госномер",
+    "vehicle": "Автомобиль",
+    "rating": "Рейтинг",
+    "balance": "Баланс",
+    "commission": "Комиссия",
+    "topUp": "Пополнить",
+    "adjust": "Корректировка",
+    "topUpTitle": "Пополнить баланс водителя",
+    "adjustTitle": "Скорректировать баланс водителя",
+    "amount": "Сумма",
+    "balanceUpdated": "Баланс обновлен",
+    "balanceUpdateFailed": "Не удалось обновить баланс",
+    "amountRequired": "Введите сумму",
+    "positiveTopUpRequired": "Пополнение должно быть больше 0"
+  },
+  "passengers": {
+    "title": "Пассажиры",
+    "description": "Аккаунты пассажиров, контакты и активность.",
+    "passenger": "Пассажир",
+    "phone": "Телефон",
+    "email": "Email",
+    "rating": "Рейтинг",
+    "joined": "Дата регистрации"
+  },
+  "orders": {
+    "title": "Заказы",
+    "description": "{count} активных заказов под наблюдением.",
+    "id": "ID",
+    "passenger": "Пассажир",
+    "driver": "Водитель",
+    "tariff": "Тариф",
+    "matching": "Matching",
+    "price": "Стоимость",
+    "route": "Маршрут",
+    "allStatuses": "Все статусы",
+    "allMatchingStatuses": "Все matching статусы",
+    "hasPendingOffer": "Есть pending offer",
+    "noDrivers": "Нет водителей",
+    "accepted": "Водитель назначен",
+    "stuck": "Завис в поиске",
+    "loadFailed": "Не удалось загрузить заказы",
+    "emptyFiltered": "Заказов по фильтрам нет",
+    "orderTitle": "Заказ {id}",
+    "pickup": "Подача",
+    "destination": "Назначение",
+    "acceptedAt": "Принят",
+    "arrivedAt": "Прибыл",
+    "startedAt": "Начат",
+    "completedAt": "Завершен",
+    "canceledAt": "Отменен",
+    "matchingOffers": "Matching offers",
+    "offersUnavailable": "История предложений пока недоступна",
+    "offersEmpty": "Предложений по заказу пока нет",
+    "vehicle": "Автомобиль",
+    "offered": "Отправлен",
+    "expires": "Истекает",
+    "responded": "Ответ",
+    "toPickup": "До подачи",
+    "km": "{value} км",
+    "matchingStatus": {
+      "accepted": "Водитель назначен",
+      "pending": "Ожидает ответа водителя",
+      "noDrivers": "Нет доступных водителей",
+      "stuck": "Поиск не запускался / нет данных",
+      "unknown": "Нет данных"
+    }
+  },
+  "tariffs": {
+    "title": "Тарифы",
+    "description": "Создание и обновление тарифных планов.",
+    "createTitle": "Создать тариф",
+    "editTitle": "Редактировать тариф {code}",
+    "saved": "Тариф сохранен",
+    "saveFailed": "Не удалось сохранить тариф",
+    "name": "Название",
+    "code": "Код",
+    "supply": "Подача",
+    "perKm": "За км",
+    "freeWait": "Бесплатное ожидание",
+    "waitPerMinute": "Ожидание/мин",
+    "currency": "Валюта",
+    "carSupplyPrice": "Цена подачи",
+    "pricePerKm": "Цена за км",
+    "freeWaitingMinutes": "Бесплатные минуты ожидания",
+    "waitingPricePerMinute": "Цена ожидания/мин",
+    "stopPrice": "Цена остановки",
+    "minimumOrderPrice": "Минимальная стоимость",
+    "codeRequired": "Введите код",
+    "nameRequired": "Введите название",
+    "minutes": "{value} мин"
+  },
+  "payments": {
+    "title": "Платежи",
+    "description": "Мониторинг транзакций и сверка платежей.",
+    "type": "Тип",
+    "provider": "Провайдер",
+    "amount": "Сумма"
+  },
+  "settings": {
+    "title": "Настройки",
+    "description": "Операционные настройки и параметры безопасности.",
+    "dispatch": "Диспетчеризация",
+    "security": "Безопасность",
+    "defaultSearchRadius": "Радиус поиска по умолчанию",
+    "strongAdminSessions": "Требовать усиленные admin-сессии"
+  }
+}

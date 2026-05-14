@@ -11,6 +11,7 @@ import {
   Tariff,
 } from '../api/types';
 import { createOrder as createOrderApi, fetchActiveOrder } from '../api/customer-api';
+import { ANGREN_DEMO_POINTS } from '../config/city';
 
 const ACTIVE_ORDER_KEY = 'customer.activeOrder';
 const statusRank: Record<OrderStatus, number> = {
@@ -68,8 +69,8 @@ type BookingState = {
 };
 
 export const useBookingStore = create<BookingState>((set, get) => ({
-  pickup: null,
-  dropoff: null,
+  pickup: ANGREN_DEMO_POINTS.fifthMicrodistrict,
+  dropoff: ANGREN_DEMO_POINTS.bazar,
   selectedTariff: null,
   estimate: null,
   activeOrder: null,
@@ -150,6 +151,10 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   hydrateActiveOrder: async () => {
     const raw = await SecureStore.getItemAsync(ACTIVE_ORDER_KEY);
     if (!raw) {
+      set({
+        pickup: get().pickup ?? ANGREN_DEMO_POINTS.fifthMicrodistrict,
+        dropoff: get().dropoff ?? ANGREN_DEMO_POINTS.bazar,
+      });
       set({ hydrated: true });
       return;
     }
@@ -204,7 +209,8 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   resetBooking: () => {
     void SecureStore.deleteItemAsync(ACTIVE_ORDER_KEY);
     set({
-      dropoff: null,
+      pickup: ANGREN_DEMO_POINTS.fifthMicrodistrict,
+      dropoff: ANGREN_DEMO_POINTS.bazar,
       selectedTariff: null,
       estimate: null,
       activeOrder: null,
