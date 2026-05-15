@@ -103,7 +103,6 @@ model Driver {
   commissionRatePercent Int      @default(10)
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
-  balanceAccount DriverBalance?
   locations     DriverLocation[]
   orders        Order[]
   transactions  Transaction[]
@@ -236,19 +235,6 @@ model Transaction {
   @@index([providerRef])
 }
 
-model DriverBalance {
-  id                 String   @id @default(uuid())
-  driverId           String   @unique
-  driver             Driver   @relation(fields: [driverId], references: [id], onDelete: Cascade)
-  availableCents     Int      @default(0)
-  pendingCents       Int      @default(0)
-  lifetimeEarnedCents Int     @default(0)
-  currency           String   @default("UZS")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  @@index([availableCents])
-}
 
 model DriverLocation {
   id        String   @id @default(uuid())
@@ -261,7 +247,7 @@ model DriverLocation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([driverId, createdAt])
+  @@unique([driverId])
   @@index([latitude, longitude])
 }
 

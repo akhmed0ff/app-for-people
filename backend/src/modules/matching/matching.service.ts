@@ -1,6 +1,7 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { DriverStatus, OrderOfferStatus, OrderStatus, Prisma, UserStatus } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
+import { RedisService } from '../../infrastructure/redis/redis.service';
 import { JwtUser } from '../auth/auth.types';
 import { PricingService } from '../pricing/pricing.service';
 import { PushService } from '../push/push.service';
@@ -20,20 +21,37 @@ const ACTIVE_ORDER_STATUSES = [
   OrderStatus.IN_PROGRESS,
 ];
 
+const GEO_DRIVERS_KEY = 'geo:drivers:online';
+const OFFER_EXPIRY_PREFIX = 'offer:expiry:';
+
 type OrderWithMatchingData = Prisma.OrderGetPayload<{
   include: { tariff: true; passenger: true };
 }>;
 
 @Injectable()
-export class MatchingService {
+export class MatchingService implements OnModuleInit {
+  private readonly logger = new Logger(MatchingService.name);
   private server?: MatchingServer;
-  private readonly timers = new Map<string, NodeJS.Timeout>();
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
     private readonly pushService: PushService,
     private readonly pricingService: PricingService,
   ) {}
+
+  // Баг 9: при старте восстанавливаем таймеры из БД — работает при любом кол-ве реплик
+  async onModuleInit() {
+    const pendingOffers = await this.prisma.orderOffer.findMany({
+      where: { status: OrderOfferStatus.PENDING, expiresAt: { gt: new Date() } },
+      select: { id: true, expiresAt: true },
+    });
+    for (const offer of pendingOffers) {
+      this.scheduleOfferExpiry(offer.id, offer.expiresAt);
+    }
+    this.logger.log(`Restored ${pendingOffers.length} pending offer timers`);
+  }
+
 
   setServer(server: MatchingServer) {
     this.server = server;
@@ -263,41 +281,44 @@ export class MatchingService {
   }
 
   private async findCandidatesInRadius(order: OrderWithMatchingData, radiusKm: number) {
-    const drivers = await this.prisma.driver.findMany({
+    // Баг 3: используем Redis GEOSEARCH вместо полного скана PostgreSQL
+    const raw = await this.redis.client.geosearch(
+      GEO_DRIVERS_KEY,
+      'FROMLONLAT',
+      Number(order.pickupLng),
+      Number(order.pickupLat),
+      'BYRADIUS',
+      radiusKm,
+      'km',
+      'ASC',
+      'COUNT',
+      MATCHING_MAX_CANDIDATES_PER_RADIUS * 3, // берём с запасом, отфильтруем ниже
+      'WITHDIST',
+    ) as [string, string][];
+
+    if (!raw.length) {
+      return [];
+    }
+
+    const driverIds = raw.map(([id]) => id);
+
+    // Валидируем только найденных кандидатов — не всю таблицу
+    const validDrivers = await this.prisma.driver.findMany({
       where: {
+        id: { in: driverIds },
         status: DriverStatus.ONLINE,
         user: { status: UserStatus.ACTIVE },
         offers: { none: { orderId: order.id } },
         orders: { none: { status: { in: ACTIVE_ORDER_STATUSES } } },
       },
-      include: {
-        user: true,
-        locations: { orderBy: { createdAt: 'desc' }, take: 1 },
-        offers: { where: { status: OrderOfferStatus.PENDING }, take: 1 },
-        orders: { where: { status: { in: ACTIVE_ORDER_STATUSES } }, take: 1 },
-      },
+      select: { id: true },
     });
 
-    return drivers
-      .filter(
-        (driver) =>
-          driver.status === DriverStatus.ONLINE &&
-          driver.user.status === UserStatus.ACTIVE &&
-          driver.locations.length > 0 &&
-          driver.offers.length === 0 &&
-          driver.orders.length === 0,
-      )
-      .map((driver) => ({
-        driverId: driver.id,
-        distanceKm: this.haversineKm(
-          Number(order.pickupLat),
-          Number(order.pickupLng),
-          Number(driver.locations[0].latitude),
-          Number(driver.locations[0].longitude),
-        ),
-      }))
-      .filter((candidate) => candidate.distanceKm <= radiusKm)
-      .sort((a, b) => a.distanceKm - b.distanceKm)
+    const validIds = new Set(validDrivers.map((d) => d.id));
+
+    return raw
+      .filter(([id]) => validIds.has(id))
+      .map(([id, dist]) => ({ driverId: id, distanceKm: Number(dist) }))
       .slice(0, MATCHING_MAX_CANDIDATES_PER_RADIUS);
   }
 
@@ -347,26 +368,34 @@ export class MatchingService {
       expiresAt: expiresAt.toISOString(),
     };
 
-    this.server?.to(Rooms.driver(driverId)).emit(SocketEvent.OrderOffered, payload);
+    // Баг 13: убираем дубль — клиент слушает только OrderOfferNew
     this.server?.to(Rooms.driver(driverId)).emit(SocketEvent.OrderOfferNew, payload);
   }
 
   private scheduleOfferExpiry(offerId: string, expiresAt: Date) {
-    this.clearOfferTimer(offerId);
+    // Баг 9: храним TTL в Redis — при рестарте/масштабировании таймер восстанавливается
     const delay = Math.max(0, expiresAt.getTime() - Date.now());
-    const timer = setTimeout(() => {
+    void this.redis.client.set(
+      `${OFFER_EXPIRY_PREFIX}${offerId}`,
+      '1',
+      'PX',
+      delay,
+    );
+    // Локальный setTimeout для текущего процесса — Redis ключ синхронизирует состояние
+    const timer = setTimeout(async () => {
+      const exists = await this.redis.client.exists(`${OFFER_EXPIRY_PREFIX}${offerId}`);
+      if (exists) {
+        // Другой инстанс уже обработал — пропускаем
+        return;
+      }
       void this.expireOffer(offerId);
     }, delay);
     timer.unref?.();
-    this.timers.set(offerId, timer);
   }
 
   private clearOfferTimer(offerId: string) {
-    const timer = this.timers.get(offerId);
-    if (timer) {
-      clearTimeout(timer);
-      this.timers.delete(offerId);
-    }
+    // Удаляем Redis ключ — все инстансы перестанут обрабатывать этот оффер
+    void this.redis.client.del(`${OFFER_EXPIRY_PREFIX}${offerId}`);
   }
 
   private async getDriverForUser(user: JwtUser) {

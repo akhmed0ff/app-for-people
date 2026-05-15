@@ -1,4 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
+import { LoginByPhoneDto } from './dto/login-by-phone.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { DevLoginDto } from './dto/dev-login.dto';
@@ -13,6 +14,11 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Post('login-by-phone')
+  loginByPhone(@Body() dto: LoginByPhoneDto) {
+    return this.authService.loginByPhone(dto.phone);
   }
 
   @Post('dev-login')

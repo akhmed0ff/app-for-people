@@ -27,6 +27,15 @@ export class AuthService {
     return this.issueTokens({ sub: user.id, email: user.email, role: user.role as Role });
   }
 
+  async loginByPhone(phone: string): Promise<TokenPair> {
+    // Баг 2: ищем реального пользователя по номеру, а не хардкодим seed-юзера
+    const user = await this.prisma.user.findUnique({ where: { phone } });
+    if (!user) {
+      throw new UnauthorizedException('User with this phone number not found');
+    }
+    return this.issueTokens({ sub: user.id, email: user.email, role: user.role as Role });
+  }
+
   async devLogin(dto: DevLoginDto): Promise<TokenPair> {
     if (!this.config.get<boolean>('DEV_LOGIN_ENABLED')) {
       throw new ForbiddenException('Dev login is disabled');

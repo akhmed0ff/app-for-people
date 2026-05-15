@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, Prisma, TransactionStatus, TransactionType } from '@prisma/client';
+import { DriverStatus, OrderStatus, Prisma, TransactionStatus, TransactionType } from '@prisma/client';
 import { Role } from '../../domain/auth/role.enum';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { JwtUser } from '../auth/auth.types';
@@ -83,7 +83,11 @@ export class BalanceService {
       if (!existingCommission) {
         await tx.driver.update({
           where: { id: order.driverId },
-          data: { balance: { decrement: commission } },
+          data: {
+          balance: { decrement: commission },
+          // Баг 1: сбрасываем водителя из BUSY в ONLINE после завершения поездки
+          status: DriverStatus.ONLINE,
+        },
         });
 
         await tx.transaction.create({

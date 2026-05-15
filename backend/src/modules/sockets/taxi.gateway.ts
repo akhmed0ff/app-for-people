@@ -163,9 +163,9 @@ export class TaxiGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   }
 
   @SubscribeMessage(SocketEvent.EtaRequest)
-  eta(@ConnectedSocket() socket: AuthedSocket, @MessageBody() payload: EtaPayload) {
+  async eta(@ConnectedSocket() socket: AuthedSocket, @MessageBody() payload: EtaPayload) {
     this.ensureRole(socket, [Role.ADMIN, Role.PASSENGER, Role.DRIVER]);
-    const eta = this.realtime.calculateEta(payload);
+    const eta = await this.realtime.calculateEta(payload);
     this.server.to(Rooms.order(payload.orderId)).emit(SocketEvent.EtaUpdated, eta);
     return eta;
   }

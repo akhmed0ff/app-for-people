@@ -11,7 +11,6 @@ export const SocketEvent = {
   DriverNearestFound: 'driver.nearest.found',
   OrderDispatch: 'order.dispatch',
   OrderJoin: 'order.join',
-  OrderOffered: 'order.offered',
   OrderMatchingStarted: 'order:matching_started',
   OrderOfferNew: 'order:offer:new',
   OrderOfferAccepted: 'order:offer:accepted',
@@ -99,7 +98,6 @@ export type ServerToClientEvents = {
   [SocketEvent.DriverNearestFound]: (payload: Array<{ driverId: string; distanceMeters: number }>) => void;
   [SocketEvent.OrderDispatch]: (payload: unknown) => void;
   [SocketEvent.OrderJoin]: (payload: unknown) => void;
-  [SocketEvent.OrderOffered]: (payload: unknown) => void;
   [SocketEvent.OrderMatchingStarted]: (payload: unknown) => void;
   [SocketEvent.OrderOfferNew]: (payload: unknown) => void;
   [SocketEvent.OrderOfferAccepted]: (payload: unknown) => void;

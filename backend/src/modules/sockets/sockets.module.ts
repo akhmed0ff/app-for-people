@@ -4,11 +4,12 @@ import { BalanceModule } from '../balance/balance.module';
 import { LocationModule } from '../location/location.module';
 import { MatchingModule } from '../matching/matching.module';
 import { PushModule } from '../push/push.module';
+import { RoutingModule } from '../routing/routing.module';
 import { TaxiGateway } from './taxi.gateway';
 import { TaxiRealtimeService } from './taxi-realtime.service';
 
 @Module({
-  imports: [JwtModule.register({}), LocationModule, PushModule, BalanceModule, MatchingModule],
+  imports: [JwtModule.register({}), LocationModule, PushModule, BalanceModule, MatchingModule, RoutingModule],
   providers: [TaxiGateway, TaxiRealtimeService],
 })
 export class SocketsModule {}

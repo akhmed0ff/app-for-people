@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { OrderStatus, Role as PrismaRole } from '@prisma/client';
+import { DriverStatus, OrderStatus, Role as PrismaRole } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
 import { Role } from '../../domain/auth/role.enum';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
@@ -7,6 +7,7 @@ import { RedisService } from '../../infrastructure/redis/redis.service';
 import { JwtUser } from '../auth/auth.types';
 import { BalanceService } from '../balance/balance.service';
 import { MatchingService } from '../matching/matching.service';
+import { RoutingService } from '../routing/routing.service';
 import { PushService } from '../push/push.service';
 import {
   AuthenticatedSocketData,
@@ -41,6 +42,7 @@ export class TaxiRealtimeService {
     private readonly pushService: PushService,
     private readonly balanceService: BalanceService,
     private readonly matchingService: MatchingService,
+    private readonly routingService: RoutingService,
   ) {}
  
   async attachClient(socket: AuthedSocket, user: JwtUser) {
@@ -211,7 +213,15 @@ export class TaxiRealtimeService {
     if (!order) {
       throw new NotFoundException('Order not found');
     }
- 
+
+    // Баг 10: запрещаем dispatch если заказ уже в активном или завершённом статусе
+    const DISPATCHABLE_STATUSES: OrderStatus[] = [OrderStatus.SEARCHING];
+    if (!DISPATCHABLE_STATUSES.includes(order.status)) {
+      throw new ConflictException(
+        `Cannot dispatch order in status ${order.status}. Only SEARCHING orders can be re-dispatched.`,
+      );
+    }
+
     await this.prisma.order.update({
       where: { id: order.id },
       data: {
@@ -243,7 +253,24 @@ export class TaxiRealtimeService {
  
   async cancelOrder(socket: AuthedSocket, server: TaxiServer, payload: OrderActionPayload) {
     await this.ensureCanManageOrder(socket, payload.orderId);
- 
+
+    // Баг 5: проверяем, что заказ можно отменить
+    const existing = await this.prisma.order.findUnique({
+      where: { id: payload.orderId },
+      select: { status: true, driverId: true },
+    });
+    if (!existing) {
+      throw new NotFoundException('Order not found');
+    }
+    const CANCELABLE_STATUSES: OrderStatus[] = [
+      OrderStatus.SEARCHING,
+      OrderStatus.DRIVER_ASSIGNED,
+      OrderStatus.DRIVER_ARRIVED,
+    ];
+    if (!CANCELABLE_STATUSES.includes(existing.status)) {
+      throw new ConflictException(`Cannot cancel order in status ${existing.status}`);
+    }
+
     const order = await this.prisma.order.update({
       where: { id: payload.orderId },
       data: {
@@ -257,9 +284,17 @@ export class TaxiRealtimeService {
         },
       },
     });
- 
+
+    // Баг 1: сбрасываем водителя из BUSY обратно в ONLINE
+    if (existing.driverId) {
+      await this.prisma.driver.update({
+        where: { id: existing.driverId },
+        data: { status: DriverStatus.ONLINE },
+      });
+    }
+
     await this.matchingService.cancelOffers(order.id, 'ORDER_CANCELED');
- 
+
     server.to([Rooms.order(order.id), Rooms.passenger(order.passengerId)]).emit(SocketEvent.OrderCanceled, order);
     server.to(Rooms.admins).emit(SocketEvent.OrderCanceled, order);
     void this.pushService.notifyPassenger(order.passengerId, {
@@ -279,7 +314,29 @@ export class TaxiRealtimeService {
  
   async updateOrderStatus(socket: AuthedSocket, server: TaxiServer, payload: OrderStatusPayload) {
     await this.ensureCanManageOrder(socket, payload.orderId);
- 
+
+    // Баг 12: матрица допустимых переходов — произвольный статус выставить нельзя
+    const existing = await this.prisma.order.findUnique({
+      where: { id: payload.orderId },
+      select: { status: true },
+    });
+    if (!existing) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const ALLOWED_TRANSITIONS: Partial<Record<OrderStatus, OrderStatus[]>> = {
+      [OrderStatus.DRIVER_ASSIGNED]: [OrderStatus.DRIVER_ARRIVED],
+      [OrderStatus.DRIVER_ARRIVED]:  [OrderStatus.IN_PROGRESS],
+      [OrderStatus.IN_PROGRESS]:     [OrderStatus.COMPLETED],
+    };
+
+    const allowed = ALLOWED_TRANSITIONS[existing.status];
+    if (!allowed?.includes(payload.status)) {
+      throw new ConflictException(
+        `Transition ${existing.status} → ${payload.status} is not allowed. Use cancel-order to cancel.`,
+      );
+    }
+
     const timestamps = {
       [OrderStatus.DRIVER_ARRIVED]: { arrivedAt: new Date() },
       [OrderStatus.IN_PROGRESS]: { startedAt: new Date() },
@@ -321,19 +378,36 @@ export class TaxiRealtimeService {
     return order;
   }
  
-  calculateEta(payload: EtaPayload): EtaResult {
-    const distanceMeters = this.haversineMeters(
-      payload.driverLat,
-      payload.driverLng,
-      payload.destinationLat,
-      payload.destinationLng,
-    );
-    const averageUrbanSpeedMetersPerSecond = 8.3;
-    return {
-      orderId: payload.orderId,
-      distanceMeters: Math.round(distanceMeters),
-      etaSeconds: Math.max(60, Math.round(distanceMeters / averageUrbanSpeedMetersPerSecond)),
-    };
+  async calculateEta(payload: EtaPayload): Promise<EtaResult> {
+    // Баг 11: используем Mapbox Directions вместо прямой линии
+    try {
+      const route = await this.routingService.estimate({
+        pickupLat: payload.driverLat,
+        pickupLng: payload.driverLng,
+        destinationLat: payload.destinationLat,
+        destinationLng: payload.destinationLng,
+        tariffCode: 'standard',
+      });
+      return {
+        orderId: payload.orderId,
+        distanceMeters: route.distanceMeters,
+        etaSeconds: route.durationSeconds,
+      };
+    } catch {
+      // Фолбэк на haversine если Mapbox недоступен
+      const distanceMeters = this.haversineMeters(
+        payload.driverLat,
+        payload.driverLng,
+        payload.destinationLat,
+        payload.destinationLng,
+      );
+      const averageUrbanSpeedMetersPerSecond = 8.3;
+      return {
+        orderId: payload.orderId,
+        distanceMeters: Math.round(distanceMeters),
+        etaSeconds: Math.max(60, Math.round(distanceMeters / averageUrbanSpeedMetersPerSecond)),
+      };
+    }
   }
  
   canUseDriverActions(socket: AuthedSocket) {
