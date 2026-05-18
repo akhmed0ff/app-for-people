@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class CreateTariffDto {
   @ApiProperty()
@@ -49,4 +49,15 @@ export class CreateTariffDto {
   @IsOptional()
   @IsString()
   currency?: string;
+
+  /**
+   * Controls visibility to drivers and passengers.
+   * When false, the tariff is excluded from GET /tariffs (client endpoint)
+   * but still visible in GET /tariffs/all (admin endpoint).
+   * Defaults to true on creation so new tariffs are immediately live.
+   */
+  @ApiProperty({ default: true, required: false })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

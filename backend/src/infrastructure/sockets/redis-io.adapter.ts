@@ -22,9 +22,11 @@ export class RedisIoAdapter extends IoAdapter {
     });
 
     const redisUrl = this.config.getOrThrow<string>('REDIS_URL');
+
     const pubClient = new Redis(redisUrl);
     const subClient = pubClient.duplicate();
-    server.adapter(createAdapter(pubClient, subClient));
+
+    server.adapter(createAdapter(pubClient, subClient) as never);
 
     return server;
   }

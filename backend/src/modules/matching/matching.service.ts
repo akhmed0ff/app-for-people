@@ -1,5 +1,6 @@
 import { ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
-import { DriverStatus, OrderOfferStatus, OrderStatus, Prisma, UserStatus } from '@prisma/client';
+import { DriverStatus, OrderOfferStatus, OrderStatus, UserStatus } from '../../infrastructure/database/prisma-enums';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { RedisService } from '../../infrastructure/redis/redis.service';
 import { JwtUser } from '../auth/auth.types';
@@ -24,9 +25,7 @@ const ACTIVE_ORDER_STATUSES = [
 const GEO_DRIVERS_KEY = 'geo:drivers:online';
 const OFFER_EXPIRY_PREFIX = 'offer:expiry:';
 
-type OrderWithMatchingData = Prisma.OrderGetPayload<{
-  include: { tariff: true; passenger: true };
-}>;
+type OrderWithMatchingData = any;
 
 @Injectable()
 export class MatchingService implements OnModuleInit {
@@ -115,7 +114,7 @@ export class MatchingService implements OnModuleInit {
   async acceptOffer(user: JwtUser, offerId: string) {
     const driver = await this.getDriverForUser(user);
     const now = new Date();
-    const result = await this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx: any) => {
       const offer = await tx.orderOffer.findUnique({
         where: { id: offerId },
         include: { order: true, driver: true },
@@ -314,7 +313,7 @@ export class MatchingService implements OnModuleInit {
       select: { id: true },
     });
 
-    const validIds = new Set(validDrivers.map((d) => d.id));
+    const validIds = new Set(validDrivers.map((d: any) => d.id));
 
     return raw
       .filter(([id]) => validIds.has(id))
@@ -407,7 +406,7 @@ export class MatchingService implements OnModuleInit {
   }
 
   private toAvailableOffer(
-    offer: Prisma.OrderOfferGetPayload<{ include: { order: { include: { tariff: true } } } }>,
+    offer: any,
   ) {
     return {
       offerId: offer.id,

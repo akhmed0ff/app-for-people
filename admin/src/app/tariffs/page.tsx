@@ -2,7 +2,7 @@
 
 import { EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Form, Input, InputNumber, Space, Table, Tag, message } from 'antd';
+import { Button, Form, Input, InputNumber, Space, Switch, Table, Tag, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -23,6 +23,7 @@ const emptyForm = {
   stopPrice: 0,
   minimumOrderPrice: 0,
   currency: 'UZS',
+  isActive: true,
 };
 
 type TariffForm = typeof emptyForm;
@@ -37,7 +38,8 @@ export default function TariffsPage() {
   const tCommon = useTranslations('common');
 
   const save = useMutation({
-    mutationFn: (values: TariffForm) => (editing ? updateTariff(editing.id, values) : createTariff(values)),
+    mutationFn: (values: TariffForm) =>
+      editing ? updateTariff(editing.id, values) : createTariff(values),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['tariffs'] });
       setEditing(null);
@@ -47,6 +49,35 @@ export default function TariffsPage() {
     onError: () => messageApi.error(t('saveFailed')),
   });
 
+  // Quick toggle without opening the full form
+  const toggleActive = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      updateTariff(id, { isActive }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['tariffs'] });
+    },
+    onError: () => messageApi.error(t('saveFailed')),
+  });
+
+  function startEdit(tariff: Tariff) {
+    setEditing(tariff);
+    form.setFieldsValue({
+      code: tariff.code,
+      name: tariff.name,
+      description: tariff.description ?? '',
+      carSupplyPrice: tariff.carSupplyPrice,
+      pricePerKm: tariff.pricePerKm,
+      freeWaitingMinutes: tariff.freeWaitingMinutes,
+      waitingPricePerMinute: tariff.waitingPricePerMinute,
+      stopPrice: tariff.stopPrice,
+      minimumOrderPrice: tariff.minimumOrderPrice,
+      currency: tariff.currency,
+      isActive: tariff.isActive,
+    });
+    // Scroll to form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   const columns: ColumnsType<Tariff> = [
     { title: t('name'), dataIndex: 'name' },
     {
@@ -54,38 +85,27 @@ export default function TariffsPage() {
       dataIndex: 'code',
       render: (code: string) => <Tag color="blue">{code}</Tag>,
     },
-    { title: t('supply'), dataIndex: 'carSupplyPrice', render: (value: number) => formatMoney(value) },
-    { title: t('perKm'), dataIndex: 'pricePerKm', render: (value: number) => formatMoney(value) },
-    { title: t('freeWait'), dataIndex: 'freeWaitingMinutes', render: (value: number) => t('minutes', { value }) },
-    { title: t('waitPerMinute'), dataIndex: 'waitingPricePerMinute', render: (value: number) => formatMoney(value) },
+    { title: t('supply'), dataIndex: 'carSupplyPrice', render: (v: number) => formatMoney(v) },
+    { title: t('perKm'), dataIndex: 'pricePerKm', render: (v: number) => formatMoney(v) },
+    { title: t('freeWait'), dataIndex: 'freeWaitingMinutes', render: (v: number) => t('minutes', { value: v }) },
+    { title: t('waitPerMinute'), dataIndex: 'waitingPricePerMinute', render: (v: number) => formatMoney(v) },
     {
       title: tCommon('status'),
       dataIndex: 'isActive',
-      render: (active: boolean) => (
-        <Tag color={active ? 'green' : 'red'}>{active ? tCommon('active') : tCommon('inactive')}</Tag>
+      render: (isActive: boolean, tariff: Tariff) => (
+        <Switch
+          checked={isActive}
+          checkedChildren={tCommon('active')}
+          loading={toggleActive.isPending}
+          onChange={(checked) => toggleActive.mutate({ id: tariff.id, isActive: checked })}
+          unCheckedChildren={tCommon('inactive')}
+        />
       ),
     },
     {
       title: tCommon('actions'),
       render: (_, tariff) => (
-        <Button
-          icon={<EditOutlined />}
-          onClick={() => {
-            setEditing(tariff);
-            form.setFieldsValue({
-              code: tariff.code,
-              name: tariff.name,
-              description: tariff.description ?? '',
-              carSupplyPrice: tariff.carSupplyPrice,
-              pricePerKm: tariff.pricePerKm,
-              freeWaitingMinutes: tariff.freeWaitingMinutes,
-              waitingPricePerMinute: tariff.waitingPricePerMinute,
-              stopPrice: tariff.stopPrice,
-              minimumOrderPrice: tariff.minimumOrderPrice,
-              currency: tariff.currency,
-            });
-          }}
-        >
+        <Button icon={<EditOutlined />} onClick={() => startEdit(tariff)}>
           {tCommon('edit')}
         </Button>
       ),
@@ -108,13 +128,13 @@ export default function TariffsPage() {
         >
           <div className="grid gap-3 md:grid-cols-3">
             <Form.Item label={t('code')} name="code" rules={[{ required: true, message: t('codeRequired') }]}>
-              <Input disabled={Boolean(editing)} />
+              <Input disabled={Boolean(editing)} placeholder="ECONOMY" />
             </Form.Item>
             <Form.Item label={t('name')} name="name" rules={[{ required: true, message: t('nameRequired') }]}>
-              <Input />
+              <Input placeholder={t('namePlaceholder')} />
             </Form.Item>
             <Form.Item label={t('currency')} name="currency" rules={[{ required: true }]}>
-              <Input />
+              <Input placeholder="UZS" />
             </Form.Item>
             <Form.Item label={t('carSupplyPrice')} name="carSupplyPrice" rules={[{ required: true }]}>
               <InputNumber min={0} style={{ width: '100%' }} />
@@ -137,6 +157,9 @@ export default function TariffsPage() {
           </div>
           <Form.Item label={tCommon('description')} name="description">
             <Input.TextArea rows={2} />
+          </Form.Item>
+          <Form.Item label={tCommon('active')} name="isActive" valuePropName="checked">
+            <Switch />
           </Form.Item>
           <Space>
             <Button htmlType="submit" icon={<PlusOutlined />} loading={save.isPending} type="primary">

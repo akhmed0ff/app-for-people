@@ -41,7 +41,8 @@
     "rows": "{count} qator",
     "previous": "Oldingi",
     "next": "Keyingi",
-    "search": "Qidirish"
+    "search": "Qidirish",
+    "allStatuses": "Barcha statuslar"
   },
   "statuses": {
     "orders": {
@@ -108,7 +109,9 @@
     "canceledOrders": "Bekor qilingan buyurtmalar",
     "onlineDrivers": "Onlayn haydovchilar",
     "revenueTrend": "Tushum dinamikasi",
-    "day": "K{day}"
+    "day": "K{day}",
+    "loading": "Yuklanmoqda...",
+    "noRevenueData": "So'nggi 7 kun uchun tushum ma'lumotlari yo'q"
   },
   "drivers": {
     "title": "Haydovchilar",
@@ -127,7 +130,8 @@
     "balanceUpdated": "Balans yangilandi",
     "balanceUpdateFailed": "Balansni yangilab bo'lmadi",
     "amountRequired": "Summani kiriting",
-    "positiveTopUpRequired": "To'ldirish 0 dan katta bo'lishi kerak"
+    "positiveTopUpRequired": "To'ldirish 0 dan katta bo'lishi kerak",
+    "searchPlaceholder": "Ism, raqam, avtomobil bo'yicha qidirish..."
   },
   "passengers": {
     "title": "Yo'lovchilar",
@@ -136,7 +140,8 @@
     "phone": "Telefon",
     "email": "Email",
     "rating": "Reyting",
-    "joined": "Ro'yxatdan o'tgan sana"
+    "joined": "Ro'yxatdan o'tgan sana",
+    "searchPlaceholder": "Ism, telefon, email bo'yicha qidirish..."
   },
   "orders": {
     "title": "Buyurtmalar",
@@ -174,10 +179,13 @@
     "toPickup": "Olib ketishgacha",
     "km": "{value} km",
     "matchingStatus": {
-      "accepted": "Haydovchi biriktirildi",
-      "pending": "Haydovchi javobi kutilmoqda",
-      "noDrivers": "Mavjud haydovchilar yo'q",
-      "stuck": "Qidiruv boshlanmagan / ma'lumot yo'q",
+      "accepted": "Haydovchi tayinlandi",
+      "pending": "Haydovchi javobini kutmoqda",
+      "noDrivers": "Mavjud haydovchi yo'q",
+      "stuck": "Qidiruv boshlanmadi / ma'lumot yo'q",
+      "inProgress": "Yo'lda",
+      "completed": "Yakunlandi",
+      "canceled": "Bekor qilindi",
       "unknown": "Ma'lumot yo'q"
     }
   },
@@ -218,6 +226,7 @@
     "dispatch": "Dispetcherlik",
     "security": "Xavfsizlik",
     "defaultSearchRadius": "Standart qidiruv radiusi",
-    "strongAdminSessions": "Kuchaytirilgan admin sessiyalarni talab qilish"
+    "strongAdminSessions": "Kuchaytirilgan admin sessiyalarni talab qilish",
+    "saved": "Sozlamalar saqlandi"
   }
 }

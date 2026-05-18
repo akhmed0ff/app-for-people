@@ -30,12 +30,10 @@ export async function registerPushNotifications() {
   }
 
   const current = await Notifications.getPermissionsAsync();
-  const finalStatus =
-    current.status === 'granted'
-      ? current.status
-      : (await Notifications.requestPermissionsAsync()).status;
+  const hasPermission = hasGrantedNotificationPermission(current)
+    || hasGrantedNotificationPermission(await Notifications.requestPermissionsAsync());
 
-  if (finalStatus !== 'granted') {
+  if (!hasPermission) {
     return null;
   }
 
@@ -58,6 +56,11 @@ export async function registerPushNotifications() {
   } catch {
     return null;
   }
+}
+
+function hasGrantedNotificationPermission(permission: unknown) {
+  const status = permission as { granted?: boolean; status?: string; ios?: { status?: number } };
+  return status.granted === true || status.status === 'granted' || status.ios?.status === 2;
 }
 
 export async function unregisterPushNotifications() {

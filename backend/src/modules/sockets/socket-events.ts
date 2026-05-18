@@ -1,4 +1,4 @@
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus } from '../../infrastructure/database/prisma-enums';
 import { Role } from '../../domain/auth/role.enum';
 import { JwtUser } from '../auth/auth.types';
 

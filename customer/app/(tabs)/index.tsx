@@ -1,17 +1,22 @@
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  FlatList,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { MapboxTripMap } from '../../src/features/map/MapboxTripMap';
 import { useBookingFlow } from '../../src/features/booking/useBookingFlow';
 import { estimateRoute } from '../../src/shared/api/customer-api';
-import { AddressSuggestion, RouteEstimate, Tariff } from '../../src/shared/api/types';
+import type { AddressSuggestion, RouteEstimate, Tariff } from '../../src/shared/api/types';
 import { useBookingStore } from '../../src/shared/store/booking.store';
 import { AddressSearchInput } from '../../src/shared/ui/AddressSearchInput';
-import { Button } from '../../src/shared/ui/Button';
-import { Screen, Section } from '../../src/shared/ui/Screen';
 import { TariffCard } from '../../src/shared/ui/TariffCard';
-import { formatMoney } from '../../src/shared/utils/pricing';
 
 type EstimateState = {
   estimate: RouteEstimate | null;
@@ -20,6 +25,20 @@ type EstimateState = {
 };
 
 const MIN_ROUTE_DISTANCE_KM = 0.05;
+
+function distanceKm(
+  from: { latitude: number; longitude: number },
+  to: { latitude: number; longitude: number },
+) {
+  const R = 6371;
+  const toRad = (v: number) => (v * Math.PI) / 180;
+  const dLat = toRad(to.latitude - from.latitude);
+  const dLon = toRad(to.longitude - from.longitude);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(from.latitude)) * Math.cos(toRad(to.latitude)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 export default function BookingScreen() {
   const booking = useBookingStore();
@@ -31,11 +50,17 @@ export default function BookingScreen() {
   const [routeEstimating, setRouteEstimating] = useState(false);
   const [estimateByTariff, setEstimateByTariff] = useState<Record<string, EstimateState>>({});
   const lastEstimateKey = useRef<string | null>(null);
+
   const hasActiveTrip = Boolean(
     booking.activeOrder &&
-      ['SEARCHING', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'].includes(booking.activeOrder.status),
+      ['SEARCHING', 'DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'].includes(
+        booking.activeOrder.status,
+      ),
   );
-  const routeDistanceKm = booking.pickup && booking.dropoff ? distanceKm(booking.pickup, booking.dropoff) : null;
+
+  const routeDistanceKm =
+    booking.pickup && booking.dropoff ? distanceKm(booking.pickup, booking.dropoff) : null;
+
   const hasRoutePoints = Boolean(
     booking.pickup?.address.trim() &&
       booking.dropoff?.address.trim() &&
@@ -44,9 +69,7 @@ export default function BookingScreen() {
   );
 
   const routeKey = useMemo(() => {
-    if (!booking.pickup || !booking.dropoff || !hasRoutePoints) {
-      return null;
-    }
+    if (!booking.pickup || !booking.dropoff || !hasRoutePoints) return null;
     return [
       booking.pickup.address.trim(),
       booking.pickup.latitude,
@@ -54,12 +77,13 @@ export default function BookingScreen() {
       booking.dropoff.address.trim(),
       booking.dropoff.latitude,
       booking.dropoff.longitude,
-      tariffs.map((tariff) => tariff.code).join(','),
+      tariffs.map((t) => t.code).join(','),
     ].join('|');
   }, [booking.dropoff, booking.pickup, hasRoutePoints, tariffs]);
 
   useEffect(() => {
     void refreshTariffs();
+    void useCurrentLocation();
   }, []);
 
   useEffect(() => {
@@ -69,11 +93,7 @@ export default function BookingScreen() {
       lastEstimateKey.current = null;
       return;
     }
-
-    if (lastEstimateKey.current === routeKey) {
-      return;
-    }
-
+    if (lastEstimateKey.current === routeKey) return;
     lastEstimateKey.current = routeKey;
     void calculateTariffEstimates(tariffs);
   }, [routeKey]);
@@ -90,17 +110,13 @@ export default function BookingScreen() {
   }
 
   async function calculateTariffEstimates(nextTariffs: Tariff[]) {
-    if (!booking.pickup || !booking.dropoff || !hasRoutePoints) {
-      return;
-    }
-
+    if (!booking.pickup || !booking.dropoff || !hasRoutePoints) return;
     setRouteEstimating(true);
     setEstimateByTariff(
       Object.fromEntries(
-        nextTariffs.map((tariff) => [tariff.code, { estimate: null, isLoading: true, error: null }]),
+        nextTariffs.map((t) => [t.code, { estimate: null, isLoading: true, error: null }]),
       ),
     );
-
     const results = await Promise.all(
       nextTariffs.map(async (tariff) => {
         try {
@@ -115,30 +131,25 @@ export default function BookingScreen() {
         } catch {
           return [
             tariff.code,
-            {
-              estimate: null,
-              isLoading: false,
-              error: 'Не удалось построить маршрут',
-            },
+            { estimate: null, isLoading: false, error: 'Ошибка маршрута' },
           ] as const;
         }
       }),
     );
-
     const nextState = Object.fromEntries(results);
     setEstimateByTariff(nextState);
     setRouteEstimating(false);
-
-    const selected = booking.selectedTariff ? nextState[booking.selectedTariff.code]?.estimate : null;
+    const selected = booking.selectedTariff
+      ? nextState[booking.selectedTariff.code]?.estimate
+      : null;
     if (selected) {
       booking.setEstimate(selected);
       return;
     }
-
-    const firstAvailable = nextTariffs.find((tariff) => nextState[tariff.code]?.estimate);
-    if (firstAvailable) {
-      booking.setTariff(firstAvailable);
-      booking.setEstimate(nextState[firstAvailable.code].estimate);
+    const first = nextTariffs.find((t) => nextState[t.code]?.estimate);
+    if (first) {
+      booking.setTariff(first);
+      booking.setEstimate(nextState[first.code].estimate);
     } else {
       booking.setEstimate(null);
     }
@@ -150,11 +161,8 @@ export default function BookingScreen() {
       latitude: suggestion.lat,
       longitude: suggestion.lng,
     };
-    if (kind === 'pickup') {
-      booking.setPickup(point);
-    } else {
-      booking.setDropoff(point);
-    }
+    if (kind === 'pickup') booking.setPickup(point);
+    else booking.setDropoff(point);
   }
 
   async function useCurrentLocation() {
@@ -162,17 +170,19 @@ export default function BookingScreen() {
     try {
       const permission = await Location.requestForegroundPermissionsAsync();
       if (permission.status !== 'granted') {
-        Alert.alert('Геолокация недоступна', 'Разрешите доступ к геолокации или выберите адрес вручную.');
+        Alert.alert('Геолокация недоступна', 'Разрешите доступ к геолокации.');
         return;
       }
-      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
       booking.setPickup({
-        address: 'Моя текущая геолокация в Ангрене',
+        address: 'Текущее местоположение',
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       });
     } catch {
-      Alert.alert('Геолокация недоступна', 'Не удалось получить текущую позицию.');
+      Alert.alert('Ошибка', 'Не удалось получить текущую позицию.');
     } finally {
       setLocationLoading(false);
     }
@@ -181,7 +191,7 @@ export default function BookingScreen() {
   function selectTariff(tariff: Tariff) {
     const state = estimateByTariff[tariff.code];
     if (!state?.estimate) {
-      Alert.alert('Тариф недоступен', state?.error ?? 'Не удалось построить маршрут');
+      Alert.alert('Тариф недоступен', state?.error ?? 'Маршрут не рассчитан');
       return;
     }
     booking.setTariff(tariff);
@@ -190,194 +200,276 @@ export default function BookingScreen() {
 
   async function submitOrder() {
     if (hasActiveTrip) {
-      Alert.alert('У вас уже есть активная поездка', 'Откройте текущую поездку перед созданием новой.');
+      Alert.alert('Активная поездка', 'Завершите текущую поездку.');
       return;
     }
     if (!booking.pickup || !booking.dropoff) {
-      Alert.alert('Проверьте точки поездки', 'Выберите точку подачи и пункт назначения.');
+      Alert.alert('Укажите маршрут', 'Выберите откуда и куда.');
       return;
     }
     if (!hasRoutePoints) {
-      Alert.alert('Проверьте точки поездки', 'Точка подачи и назначение слишком близко друг к другу.');
+      Alert.alert('Маршрут слишком короткий', 'Точки слишком близко друг к другу.');
       return;
     }
     if (!booking.selectedTariff || !booking.estimate) {
-      Alert.alert('Тариф недоступен', 'Дождитесь расчета маршрута и выберите доступный тариф.');
+      Alert.alert('Выберите тариф', 'Дождитесь расчёта маршрута.');
       return;
     }
-
     try {
       setLoading(true);
       await orderTaxi();
     } catch {
-      Alert.alert('Заказ не создан', 'Проверьте маршрут, авторизацию и доступность backend.');
+      Alert.alert('Ошибка', 'Не удалось создать заказ.');
     } finally {
       setLoading(false);
     }
   }
 
+  const selectedEstimate = booking.selectedTariff
+    ? estimateByTariff[booking.selectedTariff.code]?.estimate
+    : null;
+  const estimatedDuration =
+    selectedEstimate?.durationMinutes ?? booking.estimate?.durationMinutes;
+  const canOrder =
+    !loading &&
+    !routeEstimating &&
+    !hasActiveTrip &&
+    hasRoutePoints &&
+    Boolean(booking.selectedTariff) &&
+    Boolean(booking.estimate);
+
   return (
-    <Screen>
-      <Text style={styles.title}>Куда едем по Ангрену?</Text>
-      {hasActiveTrip ? (
-        <Section>
-          <Text style={styles.estimate}>У вас активная поездка</Text>
-          <Text style={styles.value}>{tripStatusText(booking.activeOrder?.status)}</Text>
-          <Button label="Открыть поездку" onPress={() => router.push(`/trip/${booking.activeOrder?.id}`)} />
-        </Section>
-      ) : null}
-      <MapboxTripMap
-        driverLocation={booking.driverLocation}
-        dropoff={booking.dropoff}
-        pickup={booking.pickup}
-      />
-
-      <Section>
-        <AddressSearchInput
-          label="Откуда"
-          onClear={() => booking.setPickup(null)}
-          onSelect={(suggestion) => selectAddress('pickup', suggestion)}
-          placeholder="Например: 5-й микрорайон"
-          value={booking.pickup?.address ?? ''}
+    <View style={styles.container}>
+      <View style={styles.map}>
+        <MapboxTripMap
+          driverLocation={booking.driverLocation}
+          dropoff={booking.dropoff}
+          pickup={booking.pickup}
         />
-        <Button
-          label={locationLoading ? 'Определяем...' : 'Использовать текущую геолокацию'}
-          onPress={() => void useCurrentLocation()}
-          variant="secondary"
-        />
-        <AddressSearchInput
-          label="Куда"
-          onClear={() => booking.setDropoff(null)}
-          onSelect={(suggestion) => selectAddress('dropoff', suggestion)}
-          placeholder="Например: Базар Ангрен"
-          value={booking.dropoff?.address ?? ''}
-        />
-        {booking.pickup && booking.dropoff && !hasRoutePoints ? (
-          <Text style={styles.errorText}>Точки слишком близко друг к другу</Text>
-        ) : null}
-      </Section>
-
-      <View style={styles.tariffs}>
-        {routeEstimating ? <Text style={styles.loading}>Считаем маршруты и стоимость...</Text> : null}
-        {tariffs.map((tariff) => {
-          const state = estimateByTariff[tariff.code];
-          return (
-            <TariffCard
-              disabled={hasActiveTrip || !hasRoutePoints || state?.isLoading || !state?.estimate}
-              error={state?.error}
-              estimate={state?.estimate}
-              key={tariff.id}
-              loading={state?.isLoading}
-              onPress={() => selectTariff(tariff)}
-              selected={booking.selectedTariff?.id === tariff.id}
-              tariff={tariff}
-            />
-          );
-        })}
-        {tariffs.length === 0 ? (
-          <Section>
-            <Text style={styles.empty}>
-              {tariffsLoading ? 'Загружаем тарифы...' : 'Тарифы недоступны.'}
-            </Text>
-            <Button label="Повторить" onPress={() => void refreshTariffs()} variant="secondary" />
-          </Section>
-        ) : null}
       </View>
 
-      {booking.estimate ? (
-        <Section>
-          <Text style={styles.estimate}>Стоимость поездки</Text>
-          <Text style={styles.total}>{formatMoney(booking.estimate.estimatedPrice)}</Text>
-          <Text style={styles.meta}>
-            {booking.estimate.distanceKm.toFixed(1)} км • {booking.estimate.durationMinutes} мин
-          </Text>
-        </Section>
-      ) : null}
+      <SafeAreaView style={styles.topCard}>
+        <View style={styles.addressCard}>
+          <View style={styles.addressRow}>
+            <View style={styles.dotYellow} />
+            <View style={styles.addressInputWrap}>
+              <Text style={styles.addressLabel}>Откуда</Text>
+              <AddressSearchInput
+                inline
+                label=""
+                onClear={() => booking.setPickup(null)}
+                onSelect={(s: AddressSuggestion) => selectAddress('pickup', s)}
+                placeholder="Текущее местоположение"
+                value={booking.pickup?.address ?? ''}
+              />
+            </View>
+            <TouchableOpacity
+              onPress={() => void useCurrentLocation()}
+              style={styles.arrowBtn}
+            >
+              <Text style={styles.arrowText}>›</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.divider} />
+          <View style={styles.addressRow}>
+            <View style={styles.dotBlack} />
+            <View style={styles.addressInputWrap}>
+              <Text style={styles.addressLabel}>Куда</Text>
+              <AddressSearchInput
+                inline
+                label=""
+                onClear={() => booking.setDropoff(null)}
+                onSelect={(s: AddressSuggestion) => selectAddress('dropoff', s)}
+                placeholder="Куда поедем?"
+                value={booking.dropoff?.address ?? ''}
+              />
+            </View>
+            <TouchableOpacity style={styles.plusBtn}>
+              <Text style={styles.plusText}>+</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
 
-      <Button
-        disabled={
-          loading ||
-          routeEstimating ||
-          hasActiveTrip ||
-          !hasRoutePoints ||
-          !booking.selectedTariff ||
-          !booking.estimate
-        }
-        label={loading ? 'Создаем заказ' : 'Заказать'}
-        onPress={submitOrder}
-      />
-    </Screen>
+      <View style={styles.bottomSheet}>
+        <View style={styles.handle} />
+
+        {hasActiveTrip ? (
+          <TouchableOpacity
+            onPress={() => router.push(`/trip/${booking.activeOrder?.id}`)}
+            style={styles.activeTrip}
+          >
+            <Text style={styles.activeTripText}>У вас активная поездка — открыть →</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        <FlatList
+          data={tariffs}
+          horizontal
+          keyExtractor={(item) => item.id}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tariffList}
+          renderItem={({ item: tariff }) => {
+            const state = estimateByTariff[tariff.code];
+            return (
+              <TariffCard
+                disabled={
+                  hasActiveTrip || !hasRoutePoints || state?.isLoading || !state?.estimate
+                }
+                error={state?.error}
+                estimate={state?.estimate}
+                loading={state?.isLoading}
+                onPress={() => selectTariff(tariff)}
+                selected={booking.selectedTariff?.id === tariff.id}
+                tariff={tariff}
+              />
+            );
+          }}
+        />
+
+        <View style={styles.bottomRow}>
+          <TouchableOpacity
+            style={styles.profileBtn}
+            onPress={() => router.push('/(tabs)/profile')}
+          >
+            <Text style={styles.profileIcon}>👤</Text>
+            <Text style={styles.profileLabel}>Профиль</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            disabled={!canOrder}
+            onPress={() => void submitOrder()}
+            style={[styles.orderBtn, !canOrder && styles.orderBtnDisabled]}
+          >
+            <Text style={styles.orderBtnText}>
+              {loading ? 'Создаём заказ...' : 'Заказать'}
+            </Text>
+            {estimatedDuration ? (
+              <Text style={styles.orderBtnSub}>Подача ≈ {estimatedDuration} мин</Text>
+            ) : null}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.profileBtn}>
+            <Text style={styles.profileIcon}>⚙️</Text>
+            <Text style={styles.profileLabel}>Параметры</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  title: {
-    color: '#17202a',
-    fontSize: 28,
-    fontWeight: '900',
-    marginBottom: 16,
+  container: { flex: 1, backgroundColor: '#f3f4f6' },
+  map: { ...StyleSheet.absoluteFillObject },
+  topCard: {
+    left: 0,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
-  tariffs: {
+  addressCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    elevation: 6,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+  },
+  addressRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
     gap: 10,
-    marginVertical: 16,
+    minHeight: 44,
   },
-  estimate: {
-    color: '#667085',
-    fontWeight: '700',
+  addressInputWrap: { flex: 1 },
+  addressLabel: { color: '#9ca3af', fontSize: 12, marginBottom: 2 },
+  dotYellow: {
+    backgroundColor: '#f59e0b',
+    borderRadius: 10,
+    height: 18,
+    width: 18,
   },
-  total: {
-    color: '#17202a',
-    fontSize: 28,
-    fontWeight: '900',
+  dotBlack: {
+    backgroundColor: '#111827',
+    borderColor: '#111827',
+    borderRadius: 10,
+    borderWidth: 3,
+    height: 18,
+    width: 18,
   },
-  meta: {
-    color: '#667085',
-    marginTop: 6,
+  divider: {
+    backgroundColor: '#f3f4f6',
+    height: 1,
+    marginLeft: 28,
+    marginVertical: 4,
   },
-  loading: {
-    color: '#667085',
-    fontWeight: '700',
+  arrowBtn: { padding: 4 },
+  arrowText: { color: '#9ca3af', fontSize: 22, fontWeight: '300' },
+  plusBtn: {
+    alignItems: 'center',
+    backgroundColor: '#f9fafb',
+    borderRadius: 20,
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
   },
-  empty: {
-    color: '#667085',
-    fontWeight: '700',
+  plusText: { color: '#374151', fontSize: 20, fontWeight: '300' },
+  bottomSheet: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    bottom: 0,
+    elevation: 12,
+    left: 0,
+    paddingBottom: 24,
+    position: 'absolute',
+    right: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
   },
-  errorText: {
-    color: '#b42318',
-    fontWeight: '700',
+  handle: {
+    alignSelf: 'center',
+    backgroundColor: '#e5e7eb',
+    borderRadius: 3,
+    height: 4,
+    marginBottom: 12,
+    marginTop: 10,
+    width: 40,
   },
-  value: {
-    color: '#17202a',
-    fontSize: 18,
-    fontWeight: '800',
+  tariffList: { gap: 10, paddingHorizontal: 16, paddingVertical: 4 },
+  activeTrip: {
+    backgroundColor: '#fef3c7',
+    borderRadius: 10,
+    marginBottom: 8,
+    marginHorizontal: 16,
+    padding: 12,
   },
+  activeTripText: { color: '#92400e', fontWeight: '700', textAlign: 'center' },
+  bottomRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+    paddingHorizontal: 16,
+  },
+  profileBtn: { alignItems: 'center', gap: 2, width: 56 },
+  profileIcon: { fontSize: 22 },
+  profileLabel: { color: '#6b7280', fontSize: 11 },
+  orderBtn: {
+    alignItems: 'center',
+    backgroundColor: '#111827',
+    borderRadius: 28,
+    flex: 1,
+    paddingVertical: 14,
+  },
+  orderBtnDisabled: { backgroundColor: '#9ca3af' },
+  orderBtnText: { color: '#ffffff', fontSize: 17, fontWeight: '800' },
+  orderBtnSub: { color: '#d1d5db', fontSize: 12, marginTop: 2 },
 });
-
-function distanceKm(
-  from: { latitude: number; longitude: number },
-  to: { latitude: number; longitude: number },
-) {
-  const earthRadiusKm = 6371;
-  const toRad = (value: number) => (value * Math.PI) / 180;
-  const dLat = toRad(to.latitude - from.latitude);
-  const dLon = toRad(to.longitude - from.longitude);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(from.latitude)) * Math.cos(toRad(to.latitude)) * Math.sin(dLon / 2) ** 2;
-  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function tripStatusText(status?: string) {
-  switch (status) {
-    case 'SEARCHING':
-      return 'Ищем водителя';
-    case 'DRIVER_ASSIGNED':
-      return 'Водитель найден';
-    case 'DRIVER_ARRIVED':
-      return 'Водитель прибыл';
-    case 'IN_PROGRESS':
-      return 'Вы в пути';
-    default:
-      return status ?? '';
-  }
-}

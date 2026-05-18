@@ -13,7 +13,19 @@ import { PageHeader } from '../../shared/components/PageHeader';
 import { formatDate, formatMoney } from '../../shared/utils/format';
 
 type MatchingFilter = 'all' | 'pending' | 'no-drivers' | 'accepted' | 'stuck';
-type MatchingKind = 'pending' | 'noDrivers' | 'accepted' | 'stuck' | 'unknown';
+
+// Extended to cover the full order lifecycle, not just SEARCHING.
+// Previously orders in IN_PROGRESS / COMPLETED / CANCELED / DRIVER_ARRIVED
+// all fell through to 'unknown' ("Нет данных"), which was misleading.
+type MatchingKind =
+  | 'pending'      // SEARCHING + has PENDING offer
+  | 'noDrivers'    // SEARCHING + all offers rejected/expired
+  | 'accepted'     // driver assigned (DRIVER_ASSIGNED or beyond)
+  | 'stuck'        // SEARCHING + no offers at all
+  | 'inProgress'   // IN_PROGRESS
+  | 'completed'    // COMPLETED
+  | 'canceled'     // CANCELED
+  | 'unknown';
 
 export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState('all');
@@ -217,22 +229,31 @@ function OfferTag({ status }: { status: string }) {
 
 function getMatchingStatus(order: Order): { kind: MatchingKind; color: string } {
   const offers = order.offers ?? [];
-  if (order.status === 'DRIVER_ASSIGNED') {
+
+  // Terminal states — matching is no longer relevant, show lifecycle outcome
+  if (order.status === 'COMPLETED') return { kind: 'completed', color: 'green' };
+  if (order.status === 'CANCELED') return { kind: 'canceled', color: 'red' };
+
+  // Active ride — driver already on the way or trip in progress
+  if (['DRIVER_ASSIGNED', 'DRIVER_ARRIVED', 'IN_PROGRESS'].includes(order.status)) {
     return { kind: 'accepted', color: 'green' };
   }
-  if (order.status === 'SEARCHING' && offers.some((offer) => offer.status === 'PENDING')) {
-    return { kind: 'pending', color: 'blue' };
-  }
-  if (
-    order.status === 'SEARCHING' &&
-    offers.length > 0 &&
-    offers.every((offer) => ['REJECTED', 'EXPIRED', 'CANCELED'].includes(offer.status))
-  ) {
-    return { kind: 'noDrivers', color: 'gold' };
-  }
-  if (order.status === 'SEARCHING' && !offers.length) {
+
+  // SEARCHING states — differentiate by offer activity
+  if (order.status === 'SEARCHING') {
+    if (offers.some((offer) => offer.status === 'PENDING')) {
+      return { kind: 'pending', color: 'blue' };
+    }
+    if (
+      offers.length > 0 &&
+      offers.every((offer) => ['REJECTED', 'EXPIRED', 'CANCELED'].includes(offer.status))
+    ) {
+      return { kind: 'noDrivers', color: 'gold' };
+    }
+    // No offers sent yet — matching hasn't started or is stuck
     return { kind: 'stuck', color: 'default' };
   }
+
   return { kind: 'unknown', color: 'default' };
 }
 

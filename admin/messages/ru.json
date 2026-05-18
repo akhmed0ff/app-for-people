@@ -41,7 +41,8 @@
     "rows": "{count} строк",
     "previous": "Назад",
     "next": "Вперед",
-    "search": "Поиск"
+    "search": "Поиск",
+    "allStatuses": "Все статусы"
   },
   "statuses": {
     "orders": {
@@ -91,9 +92,9 @@
     "openOrders": "Открытые заказы",
     "revenue": "Выручка",
     "searchingOrders": "Заказы в поиске",
-    "offersPending": "Offers pending",
-    "offersRejectedToday": "Offers rejected today",
-    "offersExpiredToday": "Offers expired today",
+    "offersPending": "Офферов в ожидании",
+    "offersRejectedToday": "Офферов отклонено сегодня",
+    "offersExpiredToday": "Офферов истекло сегодня",
     "ordersWithoutDriver": "Заказы без водителя",
     "orderMonitoring": "Мониторинг заказов",
     "operationsSnapshot": "Операционный срез Ангрена",
@@ -108,7 +109,9 @@
     "canceledOrders": "Отмененные заказы",
     "onlineDrivers": "Водители онлайн",
     "revenueTrend": "Динамика выручки",
-    "day": "Д{day}"
+    "day": "Д{day}",
+    "loading": "Загрузка...",
+    "noRevenueData": "Нет данных о выручке за последние 7 дней"
   },
   "drivers": {
     "title": "Водители",
@@ -127,7 +130,8 @@
     "balanceUpdated": "Баланс обновлен",
     "balanceUpdateFailed": "Не удалось обновить баланс",
     "amountRequired": "Введите сумму",
-    "positiveTopUpRequired": "Пополнение должно быть больше 0"
+    "positiveTopUpRequired": "Пополнение должно быть больше 0",
+    "searchPlaceholder": "Поиск по имени, номеру, авто..."
   },
   "passengers": {
     "title": "Пассажиры",
@@ -136,7 +140,8 @@
     "phone": "Телефон",
     "email": "Email",
     "rating": "Рейтинг",
-    "joined": "Дата регистрации"
+    "joined": "Дата регистрации",
+    "searchPlaceholder": "Поиск по имени, телефону, email..."
   },
   "orders": {
     "title": "Заказы",
@@ -178,6 +183,9 @@
       "pending": "Ожидает ответа водителя",
       "noDrivers": "Нет доступных водителей",
       "stuck": "Поиск не запускался / нет данных",
+      "inProgress": "В пути",
+      "completed": "Завершён",
+      "canceled": "Отменён",
       "unknown": "Нет данных"
     }
   },
@@ -218,6 +226,7 @@
     "dispatch": "Диспетчеризация",
     "security": "Безопасность",
     "defaultSearchRadius": "Радиус поиска по умолчанию",
-    "strongAdminSessions": "Требовать усиленные admin-сессии"
+    "strongAdminSessions": "Требовать усиленные admin-сессии",
+    "saved": "Настройки сохранены"
   }
 }

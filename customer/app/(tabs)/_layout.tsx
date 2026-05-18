@@ -5,8 +5,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#0f766e',
-        tabBarLabelStyle: { fontWeight: '700' },
+        tabBarStyle: { display: 'none' },
       }}
     >
       <Tabs.Screen name="index" options={{ title: 'Заказ' }} />

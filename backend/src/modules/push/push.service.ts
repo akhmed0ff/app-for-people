@@ -47,7 +47,7 @@ export class PushService {
     });
 
     await this.send(
-      tokens.map(({ token }) => this.toMessage(token, payload)),
+      tokens.map(({ token }: { token: string }) => this.toMessage(token, payload)),
     );
   }
 
@@ -65,7 +65,7 @@ export class PushService {
     });
 
     await this.send(
-      tokens.map(({ token }) => this.toMessage(token, payload)),
+      tokens.map(({ token }: { token: string }) => this.toMessage(token, payload)),
     );
   }
 

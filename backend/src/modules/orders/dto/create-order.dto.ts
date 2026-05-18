@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaymentMethod } from '@prisma/client';
+import { PaymentMethod } from '../../../infrastructure/database/prisma-enums';
 import { IsEnum, IsInt, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class CreateOrderDto {

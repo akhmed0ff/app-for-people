@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { DriverStatus, OrderStatus, Role as PrismaRole } from '@prisma/client';
+import { DriverStatus, OrderStatus, Role as PrismaRole } from '../../infrastructure/database/prisma-enums';
 import { Server, Socket } from 'socket.io';
 import { Role } from '../../domain/auth/role.enum';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
@@ -330,7 +330,7 @@ export class TaxiRealtimeService {
       [OrderStatus.IN_PROGRESS]:     [OrderStatus.COMPLETED],
     };
 
-    const allowed = ALLOWED_TRANSITIONS[existing.status];
+    const allowed = ALLOWED_TRANSITIONS[existing.status as OrderStatus];
     if (!allowed?.includes(payload.status)) {
       throw new ConflictException(
         `Transition ${existing.status} → ${payload.status} is not allowed. Use cancel-order to cancel.`,

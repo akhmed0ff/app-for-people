@@ -98,11 +98,11 @@ export async function fetchUsers(): Promise<User[]> {
 }
 
 export async function fetchTariffs(): Promise<Tariff[]> {
-  const response = await api.get<ApiResponse<Tariff[]>>('/tariffs');
+  const response = await api.get<ApiResponse<Tariff[]>>('/tariffs/all');
   return response.data.data;
 }
 
-export async function createTariff(input: Omit<Tariff, 'id' | 'isActive'>): Promise<Tariff> {
+export async function createTariff(input: Omit<Tariff, 'id'>): Promise<Tariff> {
   const response = await api.post<ApiResponse<Tariff>>('/tariffs', input);
   return response.data.data;
 }

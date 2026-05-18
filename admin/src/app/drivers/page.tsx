@@ -1,11 +1,11 @@
 'use client';
 
-import { EditOutlined, PlusOutlined } from '@ant-design/icons';
+import { EditOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Form, Input, InputNumber, Modal, Space, Table, Tag, message } from 'antd';
+import { Button, Form, Input, InputNumber, Modal, Select, Space, Table, Tag, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { adjustDriverBalance, fetchDrivers, topUpDriver } from '../../shared/api/admin-api';
 import { Driver } from '../../shared/api/types';
 import { PageHeader } from '../../shared/components/PageHeader';
@@ -28,6 +28,8 @@ export default function DriversPage() {
   const queryClient = useQueryClient();
   const drivers = useQuery({ queryKey: ['drivers'], queryFn: fetchDrivers });
   const [dialog, setDialog] = useState<BalanceDialogState>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const t = useTranslations('drivers');
   const tCommon = useTranslations('common');
   const tDriverStatus = useTranslations('statuses.drivers');
@@ -44,6 +46,20 @@ export default function DriversPage() {
     },
     onError: () => messageApi.error(t('balanceUpdateFailed')),
   });
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (drivers.data ?? []).filter((driver) => {
+      const statusMatches = statusFilter === 'all' || driver.status === statusFilter;
+      if (!statusMatches) return false;
+      if (!q) return true;
+      const fullName = `${driver.user.firstName} ${driver.user.lastName}`.toLowerCase();
+      const plate = driver.vehiclePlate.toLowerCase();
+      const vehicle = `${driver.vehicleMake} ${driver.vehicleModel}`.toLowerCase();
+      const phone = (driver.user.phone ?? '').toLowerCase();
+      return fullName.includes(q) || plate.includes(q) || vehicle.includes(q) || phone.includes(q);
+    });
+  }, [drivers.data, search, statusFilter]);
 
   const columns: ColumnsType<Driver> = [
     {
@@ -92,9 +108,33 @@ export default function DriversPage() {
     <>
       {contextHolder}
       <PageHeader description={t('description')} title={t('title')} />
+
+      <Space style={{ marginBottom: 16 }} wrap>
+        <Input
+          allowClear
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t('searchPlaceholder')}
+          prefix={<SearchOutlined />}
+          style={{ width: 280 }}
+          value={search}
+        />
+        <Select
+          onChange={setStatusFilter}
+          options={[
+            { value: 'all', label: tCommon('allStatuses') },
+            { value: 'ONLINE', label: tDriverStatus('ONLINE') },
+            { value: 'OFFLINE', label: tDriverStatus('OFFLINE') },
+            { value: 'BUSY', label: tDriverStatus('BUSY') },
+            { value: 'BLOCKED', label: tDriverStatus('BLOCKED') },
+          ]}
+          style={{ minWidth: 180 }}
+          value={statusFilter}
+        />
+      </Space>
+
       <Table
         columns={columns}
-        dataSource={drivers.data ?? []}
+        dataSource={filtered}
         loading={drivers.isLoading}
         locale={{ emptyText: tCommon('noData') }}
         pagination={{ pageSize: 10, showSizeChanger: true }}

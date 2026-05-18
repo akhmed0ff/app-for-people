@@ -7,8 +7,17 @@ import { UpdateTariffDto } from './dto/update-tariff.dto';
 export class TariffsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Admin: all tariffs regardless of isActive */
   findAll() {
     return this.prisma.tariff.findMany({ orderBy: { createdAt: 'desc' } });
+  }
+
+  /** Drivers & passengers: only active tariffs, sorted by creation date */
+  findActive() {
+    return this.prisma.tariff.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   create(dto: CreateTariffDto) {

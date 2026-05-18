@@ -7,6 +7,7 @@ import {
   DashboardOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  OrderedListOutlined,
   SettingOutlined,
   TagsOutlined,
   TeamOutlined,
@@ -26,7 +27,7 @@ const nav = [
   { href: '/', labelKey: 'dashboard', icon: <DashboardOutlined /> },
   { href: '/drivers', labelKey: 'drivers', icon: <CarOutlined /> },
   { href: '/passengers', labelKey: 'passengers', icon: <TeamOutlined /> },
-  { href: '/orders', labelKey: 'orders', icon: <UserOutlined /> },
+  { href: '/orders', labelKey: 'orders', icon: <OrderedListOutlined /> }, // fix: was UserOutlined
   { href: '/tariffs', labelKey: 'tariffs', icon: <TagsOutlined /> },
   { href: '/payments', labelKey: 'payments', icon: <CreditCardOutlined /> },
   { href: '/analytics', labelKey: 'analytics', icon: <BarChartOutlined /> },
@@ -42,8 +43,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const tApp = useTranslations('app');
   const tNav = useTranslations('nav');
 
+  // Fix: match by prefix so nested routes (e.g. /orders/abc-123) keep the
+  // correct nav item highlighted. Dashboard ('/') is matched last and only
+  // when nothing else matches, to avoid it winning on every path.
   const selectedKeys = useMemo(() => {
-    const match = nav.find((item) => item.href === pathname);
+    const nonRoot = nav.filter((item) => item.href !== '/');
+    const match = nonRoot.find((item) => pathname.startsWith(item.href));
     return [match?.href ?? '/'];
   }, [pathname]);
 

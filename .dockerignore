@@ -1,9 +1,49 @@
+# Dependencies
 node_modules
-npm-debug.log
-dist
-build
-.next
-.expo
+**/node_modules
+
+# Git
 .git
+.gitignore
+
+# Env
 .env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# Build outputs
+.next
+**/.next
+dist
+**/dist
+build
+**/build
+.expo
+**/.expo
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+# Logs
+*.log
+**/logs
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data
+postgres-data
+redis-data
+
+# Mobile (не нужны для backend/admin)
+customer
+driver
+
+# Misc
 coverage
+.turbo
+.vscode
+docs
+README.md

@@ -9,6 +9,7 @@ type AddressSearchInputProps = {
   value: string;
   onSelect: (suggestion: AddressSuggestion) => void;
   onClear: () => void;
+  inline?: boolean;
 };
 
 export function AddressSearchInput({
@@ -17,6 +18,7 @@ export function AddressSearchInput({
   value,
   onSelect,
   onClear,
+  inline = false,
 }: AddressSearchInputProps) {
   const [text, setText] = useState(value);
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
@@ -32,42 +34,32 @@ export function AddressSearchInput({
   useEffect(() => {
     const query = text.trim();
     setTouched(query.length > 0);
-
     if (query.length < 2) {
       setSuggestions([]);
       setLoading(false);
       setError(null);
       return;
     }
-
     const requestId = lastRequestId.current + 1;
     lastRequestId.current = requestId;
     setLoading(true);
     setError(null);
-
     const timer = setTimeout(() => {
       searchAddress(query)
         .then((items) => {
-          if (lastRequestId.current !== requestId) {
-            return;
-          }
+          if (lastRequestId.current !== requestId) return;
           setSuggestions(items);
           setError(items.length === 0 ? 'Ничего не найдено' : null);
         })
         .catch((searchError) => {
-          if (lastRequestId.current !== requestId) {
-            return;
-          }
+          if (lastRequestId.current !== requestId) return;
           setSuggestions([]);
           setError(getSearchErrorText(searchError));
         })
         .finally(() => {
-          if (lastRequestId.current === requestId) {
-            setLoading(false);
-          }
+          if (lastRequestId.current === requestId) setLoading(false);
         });
     }, 400);
-
     return () => clearTimeout(timer);
   }, [text]);
 
@@ -88,23 +80,25 @@ export function AddressSearchInput({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.inputRow}>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
+      <View style={[styles.inputRow, inline && styles.inputRowInline]}>
         <TextInput
           onChangeText={setText}
           placeholder={placeholder}
-          placeholderTextColor="#98a2b3"
-          style={styles.input}
+          placeholderTextColor="#9ca3af"
+          style={[styles.input, inline && styles.inputInline]}
           value={text}
         />
         {text ? (
           <Pressable accessibilityRole="button" onPress={clear} style={styles.clearButton}>
-            <Text style={styles.clearText}>Очистить</Text>
+            <Text style={styles.clearText}>✕</Text>
           </Pressable>
         ) : null}
       </View>
       {loading ? <Text style={styles.stateText}>Ищем адрес...</Text> : null}
-      {!loading && error && touched ? <Text style={styles.errorText}>{error}</Text> : null}
+      {!loading && error && touched ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : null}
       {!loading && suggestions.length > 0 ? (
         <View style={styles.suggestions}>
           {suggestions.map((suggestion) => (
@@ -126,24 +120,14 @@ export function AddressSearchInput({
 
 function getSearchErrorText(error: unknown) {
   const message = error instanceof Error ? error.message : '';
-  if (message === 'MAPBOX_TOKEN_MISSING') {
-    return 'Mapbox token не настроен';
-  }
-  if (message === 'MAPBOX_RATE_LIMIT') {
-    return 'Слишком много запросов, попробуйте позже';
-  }
+  if (message === 'MAPBOX_TOKEN_MISSING') return 'Mapbox token не настроен';
+  if (message === 'MAPBOX_RATE_LIMIT') return 'Слишком много запросов';
   return 'Не удалось загрузить адреса';
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    gap: 8,
-  },
-  label: {
-    color: '#344054',
-    fontSize: 13,
-    fontWeight: '700',
-  },
+  wrap: { gap: 4 },
+  label: { color: '#344054', fontSize: 13, fontWeight: '700' },
   inputRow: {
     alignItems: 'center',
     backgroundColor: '#ffffff',
@@ -154,50 +138,45 @@ const styles = StyleSheet.create({
     minHeight: 48,
     overflow: 'hidden',
   },
+  inputRowInline: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    minHeight: 32,
+  },
   input: {
     color: '#17202a',
     flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     minHeight: 48,
     paddingHorizontal: 14,
   },
-  clearButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+  inputInline: {
+    fontSize: 15,
+    minHeight: 32,
+    paddingHorizontal: 0,
   },
-  clearText: {
-    color: '#0f766e',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  stateText: {
-    color: '#667085',
-    fontWeight: '700',
-  },
-  errorText: {
-    color: '#b42318',
-    fontWeight: '700',
-  },
+  clearButton: { paddingHorizontal: 8, paddingVertical: 6 },
+  clearText: { color: '#9ca3af', fontSize: 14 },
+  stateText: { color: '#667085', fontSize: 12 },
+  errorText: { color: '#b42318', fontSize: 12, fontWeight: '700' },
   suggestions: {
     backgroundColor: '#ffffff',
     borderColor: '#d9dee7',
     borderRadius: 8,
     borderWidth: 1,
+    elevation: 4,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   suggestion: {
     borderBottomColor: '#edf1f7',
     borderBottomWidth: 1,
-    gap: 4,
+    gap: 2,
     padding: 12,
   },
-  suggestionTitle: {
-    color: '#17202a',
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  suggestionMeta: {
-    color: '#667085',
-    fontSize: 13,
-  },
+  suggestionTitle: { color: '#17202a', fontSize: 15, fontWeight: '700' },
+  suggestionMeta: { color: '#667085', fontSize: 12 },
 });

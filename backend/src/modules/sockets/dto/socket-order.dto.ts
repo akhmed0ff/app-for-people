@@ -1,4 +1,4 @@
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus } from '../../../infrastructure/database/prisma-enums';
 import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 
 export class DispatchOrderDto {

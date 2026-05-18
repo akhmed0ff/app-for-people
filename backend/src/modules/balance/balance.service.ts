@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { DriverStatus, OrderStatus, Prisma, TransactionStatus, TransactionType } from '@prisma/client';
+import { DriverStatus, OrderStatus, TransactionStatus, TransactionType } from '../../infrastructure/database/prisma-enums';
+import { Prisma } from '@prisma/client';
 import { Role } from '../../domain/auth/role.enum';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { JwtUser } from '../auth/auth.types';
@@ -37,7 +38,7 @@ export class BalanceService {
   }
 
   async completeOrderWithCommission(orderId: string, comment = 'Trip completed.') {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: any) => {
       const order = await tx.order.findUnique({
         where: { id: orderId },
         include: { driver: true, tariff: true },
@@ -114,7 +115,7 @@ export class BalanceService {
     type: TransactionType,
     description?: string,
   ) {
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx: any) => {
       const driver = await tx.driver.update({
         where: { id: driverId },
         data: { balance: { increment: amount } },
@@ -146,7 +147,7 @@ export class BalanceService {
   }
 
   private calculateFinalPrice(
-    order: Prisma.OrderGetPayload<{ include: { driver: true; tariff: true } }>,
+    order: any,
   ) {
     if (order.fareCents !== null && order.fareCents !== undefined) {
       return order.fareCents;

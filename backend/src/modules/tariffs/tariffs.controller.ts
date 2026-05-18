@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '../../domain/auth/role.enum';
 import { Roles } from '../../interfaces/http/decorators/roles.decorator';
 import { RolesGuard } from '../../interfaces/http/guards/roles.guard';
@@ -15,19 +15,37 @@ import { TariffsService } from './tariffs.service';
 export class TariffsController {
   constructor(private readonly tariffsService: TariffsService) {}
 
+  /**
+   * Public endpoint for drivers and passengers.
+   * Returns ONLY active tariffs — inactive ones are invisible to clients.
+   */
   @Get()
-  @Roles(Role.ADMIN, Role.DRIVER, Role.PASSENGER)
+  @ApiOperation({ summary: 'List active tariffs (drivers & passengers)' })
+  @Roles(Role.DRIVER, Role.PASSENGER)
+  findActive() {
+    return this.tariffsService.findActive();
+  }
+
+  /**
+   * Admin endpoint — returns all tariffs including inactive ones,
+   * so the admin panel can display and manage the full catalogue.
+   */
+  @Get('all')
+  @ApiOperation({ summary: 'List all tariffs including inactive (admin only)' })
+  @Roles(Role.ADMIN)
   findAll() {
     return this.tariffsService.findAll();
   }
 
   @Post()
+  @ApiOperation({ summary: 'Create a new tariff (admin only)' })
   @Roles(Role.ADMIN)
   create(@Body() dto: CreateTariffDto) {
     return this.tariffsService.create(dto);
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update a tariff (admin only)' })
   @Roles(Role.ADMIN)
   update(@Param('id') id: string, @Body() dto: UpdateTariffDto) {
     return this.tariffsService.update(id, dto);

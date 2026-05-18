@@ -1,6 +1,6 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus } from '../../infrastructure/database/prisma-enums';
 import { Role } from '../../domain/auth/role.enum';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { JwtUser } from '../auth/auth.types';
